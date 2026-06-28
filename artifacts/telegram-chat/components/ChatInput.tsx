@@ -1,4 +1,4 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -73,9 +73,9 @@ export default function ChatInput({ onSend }: Props) {
 
       {/* Single pill — emoji | text | paperclip | mic circle — all inside, no gap */}
       <View style={styles.inputPill}>
-        {/* Left: sticker/emoji icon */}
+        {/* Left: emoji button — real emoji character like Telegram/WhatsApp */}
         <Pressable style={styles.emojiBtn}>
-          <MaterialCommunityIcons name="sticker-emoji" size={27} color="#8a8a8a" />
+          <Text style={styles.emojiChar}>😊</Text>
         </Pressable>
 
         {/* Middle: text input */}
@@ -156,6 +156,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     justifyContent: "center",
     alignItems: "center",
+  },
+  emojiChar: {
+    fontSize: 24,
+    lineHeight: 28,
   },
 
   input: {
