@@ -2,7 +2,7 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Alert,
   Platform,
@@ -24,24 +24,39 @@ export default function ChatInput({ onSend }: Props) {
   const insets = useSafeAreaInsets();
   const bottomPad = Platform.OS === "web" ? 16 : insets.bottom + 4;
 
-  async function handlePickImage() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  function handlePickImage() {
     if (Platform.OS === "web") {
-      Alert.alert("Info", "Image upload works on Expo Go (mobile app).");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+        fileInputRef.current.click();
+      }
       return;
     }
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow photo access to upload images.");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPendingImage(result.assets[0].uri);
-    }
+
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission needed", "Allow photo access to upload images.");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setPendingImage(result.assets[0].uri);
+      }
+    })();
+  }
+
+  function handleWebFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPendingImage(url);
   }
 
   function handleSend() {
@@ -56,6 +71,17 @@ export default function ChatInput({ onSend }: Props) {
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPad }]}>
+      {/* Hidden web file input */}
+      {Platform.OS === "web" && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleWebFileChange as any}
+        />
+      )}
+
       {pendingImage && (
         <View style={styles.previewRow}>
           <Image source={{ uri: pendingImage }} style={styles.previewThumb} contentFit="cover" />
@@ -90,7 +116,7 @@ export default function ChatInput({ onSend }: Props) {
           onSubmitEditing={handleSend}
         />
 
-        {/* Paperclip */}
+        {/* Paperclip — opens file picker */}
         <Pressable style={styles.attachBtn} onPress={handlePickImage}>
           <Feather name="paperclip" size={22} color={pendingImage ? "#3390ec" : "#8a8a8a"} />
         </Pressable>
