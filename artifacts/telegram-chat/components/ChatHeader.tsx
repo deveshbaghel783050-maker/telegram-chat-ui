@@ -18,7 +18,7 @@ export default function ChatHeader() {
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
       <View style={styles.inner}>
-        <Pressable style={styles.pill} onPress={() => router.back()}>
+        <Pressable style={styles.pillLeft} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color="#1a1a1a" />
         </Pressable>
 
@@ -29,21 +29,19 @@ export default function ChatHeader() {
               style={styles.avatar}
               contentFit="cover"
             />
-            <View style={styles.avatarLabel}>
-              <Text style={styles.avatarLabelText}>FLASH</Text>
+            <View style={styles.flashBadge}>
+              <Text style={styles.flashText}>FLASH</Text>
             </View>
           </View>
 
-          <View style={styles.info}>
-            <Text style={styles.status}>last seen recently</Text>
-          </View>
+          <Text style={styles.statusText}>last seen recently</Text>
 
           <Pressable style={styles.muteBtn}>
-            <MaterialIcons name="volume-off" size={20} color="#555" />
+            <MaterialIcons name="volume-off" size={21} color="#333" />
           </Pressable>
         </View>
 
-        <View style={styles.pill}>
+        <View style={styles.pillRight}>
           <Pressable style={styles.pillAction}>
             <Feather name="phone" size={20} color="#1a1a1a" />
           </Pressable>
@@ -60,30 +58,42 @@ export default function ChatHeader() {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 10,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   inner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    height: 58,
+    minHeight: 62,
   },
-  pill: {
+
+  pillLeft: {
+    backgroundColor: "#ffffff",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.13,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  pillRight: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.13,
     shadowRadius: 4,
     elevation: 3,
   },
   pillAction: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
   },
   pillDivider: {
     width: 1,
@@ -91,53 +101,50 @@ const styles = StyleSheet.create({
     backgroundColor: "#ddd",
     marginHorizontal: 2,
   },
+
   centerRow: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
+
   avatarWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
+    borderWidth: 2.5,
+    borderColor: "rgba(255,255,255,0.9)",
   },
   avatar: {
-    width: 50,
-    height: 50,
+    width: "100%",
+    height: "100%",
   },
-  avatarLabel: {
+  flashBadge: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingVertical: 2,
+    backgroundColor: "rgba(0,0,0,0.52)",
+    paddingVertical: 3,
     alignItems: "center",
   },
-  avatarLabelText: {
+  flashText: {
     color: "#ffffff",
-    fontSize: 8,
-    fontWeight: "700",
+    fontSize: 9,
+    fontWeight: "800",
     fontFamily: "Inter_700Bold",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
-  info: {
+
+  statusText: {
     flex: 1,
-  },
-  status: {
     fontSize: 14,
-    color: "#1a1a1a",
+    color: "#111",
     fontFamily: "Inter_400Regular",
   },
+
   muteBtn: {
     padding: 4,
   },
