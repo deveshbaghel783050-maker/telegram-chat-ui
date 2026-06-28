@@ -14,6 +14,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ProfileProvider } from "@/context/ProfileContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,8 +23,8 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="chat" options={{ headerShown: false }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="chat" />
     </Stack>
   );
 }
@@ -50,7 +51,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <ProfileProvider>
+                <RootLayoutNav />
+              </ProfileProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
