@@ -17,7 +17,7 @@ type Props = {
 export default function ChatInput({ onSend }: Props) {
   const [text, setText] = useState("");
   const insets = useSafeAreaInsets();
-  const bottomPad = Platform.OS === "web" ? 20 : insets.bottom;
+  const bottomPad = Platform.OS === "web" ? 16 : insets.bottom + 4;
 
   function handleSend() {
     const trimmed = text.trim();
@@ -28,37 +28,39 @@ export default function ChatInput({ onSend }: Props) {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: bottomPad + 6 }]}>
+    <View style={[styles.container, { paddingBottom: bottomPad }]}>
       <View style={styles.row}>
-        <Pressable style={styles.iconBtn}>
-          <Ionicons name="happy-outline" size={25} color="#8a9a88" />
-        </Pressable>
+        <View style={styles.inputPill}>
+          <Pressable style={styles.emojiBtn}>
+            <Ionicons name="happy-outline" size={26} color="#8a8a8a" />
+          </Pressable>
 
-        <View style={styles.inputWrap}>
           <TextInput
             value={text}
             onChangeText={setText}
             placeholder="Message"
-            placeholderTextColor="#aaa"
+            placeholderTextColor="#b0b0b0"
             style={styles.input}
             multiline
             returnKeyType="default"
+            onSubmitEditing={handleSend}
           />
+
+          <Pressable style={styles.attachBtn}>
+            <Feather name="paperclip" size={22} color="#8a8a8a" />
+          </Pressable>
         </View>
 
-        <Pressable style={styles.iconBtn}>
-          <Feather name="paperclip" size={22} color="#8a9a88" />
-        </Pressable>
-
-        {text.trim().length > 0 ? (
-          <Pressable style={styles.sendBtn} onPress={handleSend}>
+        <Pressable
+          style={styles.actionCircle}
+          onPress={text.trim().length > 0 ? handleSend : undefined}
+        >
+          {text.trim().length > 0 ? (
             <Ionicons name="send" size={20} color="#ffffff" />
-          </Pressable>
-        ) : (
-          <Pressable style={styles.sendBtn}>
+          ) : (
             <Ionicons name="mic" size={22} color="#ffffff" />
-          </Pressable>
-        )}
+          )}
+        </Pressable>
       </View>
     </View>
   );
@@ -66,49 +68,67 @@ export default function ChatInput({ onSend }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#f0f0f0",
     paddingTop: 8,
-    paddingHorizontal: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#ddd",
+    paddingHorizontal: 10,
+    paddingBottom: 12,
   },
   row: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 6,
+    gap: 8,
   },
-  iconBtn: {
-    paddingBottom: 10,
-    paddingHorizontal: 4,
-  },
-  inputWrap: {
+
+  inputPill: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#ffffff",
-    borderRadius: 24,
-    paddingHorizontal: 14,
+    borderRadius: 999,
+    paddingLeft: 6,
+    paddingRight: 10,
     paddingVertical: Platform.OS === "ios" ? 10 : 6,
-    minHeight: 44,
-    justifyContent: "center",
+    minHeight: 50,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 2,
   },
+
+  emojiBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    justifyContent: "center",
+  },
+
   input: {
-    fontSize: 15,
+    flex: 1,
+    fontSize: 16,
     color: "#0a0a0a",
     fontFamily: "Inter_400Regular",
     maxHeight: 120,
-    minHeight: 20,
+    minHeight: 22,
+    paddingVertical: 0,
+    paddingHorizontal: 4,
   },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+
+  attachBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    justifyContent: "center",
+  },
+
+  actionCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#3390ec",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 2,
+    shadowColor: "#3390ec",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
