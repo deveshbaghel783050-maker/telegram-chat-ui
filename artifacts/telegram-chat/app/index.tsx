@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Alert,
   Modal,
@@ -36,26 +36,39 @@ export default function ProfileScreen() {
   const [editField, setEditField] = useState<EditField | null>(null);
   const [editValue, setEditValue] = useState("");
   const [activeTab, setActiveTab] = useState<"you" | "them">("you");
+  const avatarFileRef = useRef<HTMLInputElement | null>(null);
 
   const allMsgs = ctx.messages;
   const filteredMsgs = allMsgs.filter((m) => activeTab === "you" ? m.sent : !m.sent).slice(-6);
 
-  async function handleTheirAvatarPress() {
+  function handleTheirAvatarPress() {
     if (Platform.OS === "web") {
-      Alert.alert("Info", "Image upload works on Expo Go (mobile app).");
+      if (avatarFileRef.current) {
+        avatarFileRef.current.value = "";
+        avatarFileRef.current.click();
+      }
       return;
     }
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets[0]) {
-      ctx.updateTheirProfile({ avatarUri: result.assets[0].uri });
-    }
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") return;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets[0]) {
+        ctx.updateTheirProfile({ avatarUri: result.assets[0].uri });
+      }
+    })();
+  }
+
+  function handleWebAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    ctx.updateTheirProfile({ avatarUri: url });
   }
 
   function openEdit(key: EditField["key"], label: string, val: string) {
@@ -85,6 +98,17 @@ export default function ProfileScreen() {
     <View style={styles.root}>
       <LinearGradient colors={["#b2d4a8", "#6aab6a", "#4a8a4a"]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
       <PatternOverlay />
+
+      {/* Hidden file input for web avatar upload */}
+      {Platform.OS === "web" && (
+        <input
+          ref={avatarFileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleWebAvatarChange as any}
+        />
+      )}
 
       <View style={[styles.topBar, { paddingTop: Platform.OS === "web" ? 44 : insets.top + 4 }]}>
         <Pressable style={styles.topBarBtn} onPress={() => router.back()}>
