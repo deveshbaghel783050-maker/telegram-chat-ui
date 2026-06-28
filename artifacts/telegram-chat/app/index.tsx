@@ -1,7 +1,4 @@
-import {
-  Feather,
-  Ionicons,
-} from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,45 +28,25 @@ function PatternOverlay() {
   );
 }
 
-type EditField = { key: "name" | "phone" | "username" | "bio"; label: string };
-
-const ALL_MSGS = [
-  { text: "Hi", time: "10:00 AM", sent: true },
-  { text: "Hi", time: "10:01 AM", sent: false },
-  { text: "How are you?", time: "10:02 AM", sent: true },
-  { text: "I am fine.", time: "10:03 AM", sent: false },
-  { text: "What are you doing?", time: "10:05 AM", sent: true },
-  { text: "Nothing just chilling bhai", time: "10:06 AM", sent: false },
-  { text: "Ok nice", time: "10:07 AM", sent: true },
-  { text: "Haan bhai, tu bata", time: "10:08 AM", sent: false },
-  { text: "Sale seen krrha he bss", time: "11:28 AM", sent: false },
-  { text: "ye done ha ab mat boLna ok", time: "1:36 PM", sent: true },
-  { text: "ok", time: "1:36 PM", sent: true },
-  { text: "H", time: "1:37 PM", sent: false },
-  { text: "HD se jyda slow", time: "1:38 PM", sent: false },
-];
+type EditField = { key: "theirName" | "theirPhone" | "theirUsername" | "theirBio"; label: string };
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, updateProfile } = useProfile();
+  const ctx = useProfile();
   const [editField, setEditField] = useState<EditField | null>(null);
   const [editValue, setEditValue] = useState("");
   const [activeTab, setActiveTab] = useState<"you" | "them">("you");
 
-  const filteredMsgs = ALL_MSGS.filter((m) =>
-    activeTab === "you" ? m.sent : !m.sent
-  );
+  const allMsgs = ctx.messages;
+  const filteredMsgs = allMsgs.filter((m) => activeTab === "you" ? m.sent : !m.sent).slice(-6);
 
-  async function handleAvatarPress() {
+  async function handleTheirAvatarPress() {
     if (Platform.OS === "web") {
-      Alert.alert("Upload Photo", "Image upload works on the Expo Go mobile app.");
+      Alert.alert("Info", "Image upload works on Expo Go (mobile app).");
       return;
     }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow photo access to upload an image.");
-      return;
-    }
+    if (status !== "granted") return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -77,26 +54,31 @@ export default function ProfileScreen() {
       quality: 0.85,
     });
     if (!result.canceled && result.assets[0]) {
-      updateProfile({ avatarUri: result.assets[0].uri });
+      ctx.updateTheirProfile({ avatarUri: result.assets[0].uri });
     }
   }
 
-  function openEdit(key: EditField["key"], label: string) {
+  function openEdit(key: EditField["key"], label: string, val: string) {
     setEditField({ key, label });
-    setEditValue(profile[key]);
+    setEditValue(val);
   }
 
   function saveEdit() {
-    if (editField) {
-      updateProfile({ [editField.key]: editValue.trim() || profile[editField.key] });
-    }
+    if (!editField) return;
+    const trimmed = editValue.trim();
+    if (!trimmed) { setEditField(null); return; }
+    const k = editField.key;
+    if (k === "theirName") ctx.updateTheirProfile({ name: trimmed });
+    else if (k === "theirPhone") ctx.updateTheirProfile({ phone: trimmed });
+    else if (k === "theirUsername") ctx.updateTheirProfile({ username: trimmed });
+    else if (k === "theirBio") ctx.updateTheirProfile({ bio: trimmed });
     setEditField(null);
   }
 
-  const infoRows: Array<{ icon: string; key: EditField["key"]; label: string; sub: string }> = [
-    { icon: "phone", key: "phone", label: profile.phone, sub: "Mobile" },
-    { icon: "at-sign", key: "username", label: profile.username, sub: "Username" },
-    { icon: "info", key: "bio", label: profile.bio, sub: "Bio" },
+  const infoRows: Array<{ icon: string; key: EditField["key"]; label: string; val: string; sub: string }> = [
+    { icon: "phone",    key: "theirPhone",    label: ctx.theirPhone,    val: ctx.theirPhone,    sub: "Mobile" },
+    { icon: "at-sign",  key: "theirUsername", label: ctx.theirUsername, val: ctx.theirUsername, sub: "Username" },
+    { icon: "info",     key: "theirBio",      label: ctx.theirBio,      val: ctx.theirBio,      sub: "Bio" },
   ];
 
   return (
@@ -109,17 +91,17 @@ export default function ProfileScreen() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
         <Text style={styles.topBarTitle}>Profile</Text>
-        <Pressable style={styles.topBarBtn}>
-          <Feather name="more-vertical" size={22} color="#fff" />
+        <Pressable style={styles.topBarBtn} onPress={() => router.push("/editor")}>
+          <Feather name="edit" size={19} color="#fff" />
         </Pressable>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <Pressable onPress={handleAvatarPress} style={styles.avatarWrap}>
+          <Pressable onPress={handleTheirAvatarPress} style={styles.avatarWrap}>
             <Image
-              source={profile.avatarUri ? { uri: profile.avatarUri } : require("../assets/images/flash_avatar.jpg")}
+              source={ctx.theirAvatarUri ? { uri: ctx.theirAvatarUri } : require("../assets/images/flash_avatar.jpg")}
               style={styles.avatarImg}
               contentFit="cover"
             />
@@ -128,14 +110,14 @@ export default function ProfileScreen() {
               <Text style={styles.cameraText}>Upload</Text>
             </View>
           </Pressable>
-          <Pressable onPress={() => openEdit("name", "Name")} style={styles.nameWrap}>
-            <Text style={styles.profileName}>{profile.name}</Text>
+          <Pressable onPress={() => openEdit("theirName", "Name", ctx.theirName)} style={styles.nameWrap}>
+            <Text style={styles.profileName}>{ctx.theirName}</Text>
             <Feather name="edit-2" size={13} color="rgba(255,255,255,0.8)" style={{ marginLeft: 6, marginTop: 5 }} />
           </Pressable>
           <Text style={styles.profileStatus}>last seen recently</Text>
         </View>
 
-        {/* Action buttons */}
+        {/* Actions */}
         <View style={styles.actionRow}>
           {[
             { icon: "chatbubble", label: "Message", action: () => router.push("/chat") },
@@ -155,7 +137,7 @@ export default function ProfileScreen() {
         {/* Info card */}
         <View style={styles.card}>
           {infoRows.map((row, i) => (
-            <Pressable key={row.key} style={[styles.infoRow, i > 0 && styles.rowBorder]} onPress={() => openEdit(row.key, row.sub)}>
+            <Pressable key={row.key} style={[styles.infoRow, i > 0 && styles.rowBorder]} onPress={() => openEdit(row.key, row.sub, row.val)}>
               <Feather name={row.icon as any} size={20} color="#3390ec" style={styles.infoIcon} />
               <View style={styles.infoText}>
                 <Text style={styles.infoLabel}>{row.label}</Text>
@@ -169,28 +151,24 @@ export default function ProfileScreen() {
         {/* You / Them tabs */}
         <View style={styles.tabsCard}>
           <View style={styles.tabHeader}>
-            <Pressable
-              style={[styles.tabBtn, activeTab === "you" && styles.tabBtnActive]}
-              onPress={() => setActiveTab("you")}
-            >
-              <Ionicons name="person" size={16} color={activeTab === "you" ? "#3390ec" : "#888"} style={{ marginRight: 5 }} />
+            <Pressable style={[styles.tabBtn, activeTab === "you" && styles.tabBtnActive]} onPress={() => setActiveTab("you")}>
+              <Ionicons name="person" size={15} color={activeTab === "you" ? "#3390ec" : "#888"} style={{ marginRight: 4 }} />
               <Text style={[styles.tabText, activeTab === "you" && styles.tabTextActive]}>You</Text>
             </Pressable>
-            <Pressable
-              style={[styles.tabBtn, activeTab === "them" && styles.tabBtnActive]}
-              onPress={() => setActiveTab("them")}
-            >
-              <Ionicons name="person-circle" size={16} color={activeTab === "them" ? "#3390ec" : "#888"} style={{ marginRight: 5 }} />
+            <Pressable style={[styles.tabBtn, activeTab === "them" && styles.tabBtnActive]} onPress={() => setActiveTab("them")}>
+              <Ionicons name="person-circle" size={15} color={activeTab === "them" ? "#3390ec" : "#888"} style={{ marginRight: 4 }} />
               <Text style={[styles.tabText, activeTab === "them" && styles.tabTextActive]}>Them</Text>
             </Pressable>
           </View>
 
+          {filteredMsgs.length === 0 && (
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <Text style={{ color: "#aaa", fontSize: 13, fontFamily: "Inter_400Regular" }}>No messages yet</Text>
+            </View>
+          )}
+
           {filteredMsgs.map((msg, i) => (
-            <Pressable
-              key={i}
-              style={[styles.msgRow, i > 0 && styles.rowBorder]}
-              onPress={() => router.push("/chat")}
-            >
+            <Pressable key={msg.id} style={[styles.msgRow, i > 0 && styles.rowBorder]} onPress={() => router.push("/chat")}>
               <View style={[styles.msgBubblePreview, msg.sent ? styles.msgSent : styles.msgReceived]}>
                 <Text style={styles.msgBubbleText} numberOfLines={1}>{msg.text}</Text>
               </View>
@@ -204,8 +182,14 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
+        {/* Edit Chat button */}
+        <Pressable style={styles.editChatBtn} onPress={() => router.push("/editor")}>
+          <Feather name="edit-3" size={19} color="#fff" />
+          <Text style={styles.editChatText}>Edit Fake Chat</Text>
+        </Pressable>
+
         <Pressable style={styles.openChatBtn} onPress={() => router.push("/chat")}>
-          <Ionicons name="chatbubbles" size={20} color="#fff" />
+          <Ionicons name="chatbubbles" size={19} color="#fff" />
           <Text style={styles.openChatText}>Open Chat</Text>
         </Pressable>
       </ScrollView>
@@ -215,15 +199,7 @@ export default function ProfileScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setEditField(null)}>
           <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>Edit {editField?.label}</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={editValue}
-              onChangeText={setEditValue}
-              autoFocus
-              placeholder={`Enter ${editField?.label}`}
-              placeholderTextColor="#bbb"
-              onSubmitEditing={saveEdit}
-            />
+            <TextInput style={styles.modalInput} value={editValue} onChangeText={setEditValue} autoFocus placeholder={`Enter ${editField?.label}`} placeholderTextColor="#bbb" onSubmitEditing={saveEdit} />
             <View style={styles.modalBtns}>
               <Pressable style={styles.modalCancel} onPress={() => setEditField(null)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
@@ -244,12 +220,11 @@ const styles = StyleSheet.create({
   topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingBottom: 8, justifyContent: "space-between" },
   topBarBtn: { padding: 8, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.15)" },
   topBarTitle: { fontSize: 18, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
-
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 14, paddingTop: 10, gap: 14 },
+  scrollContent: { paddingHorizontal: 14, paddingTop: 10, gap: 12 },
 
   avatarSection: { alignItems: "center", paddingVertical: 8 },
-  avatarWrap: { width: 110, height: 110, borderRadius: 55, overflow: "hidden", borderWidth: 3, borderColor: "#fff", marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
+  avatarWrap: { width: 108, height: 108, borderRadius: 54, overflow: "hidden", borderWidth: 3, borderColor: "#fff", marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
   avatarImg: { width: "100%", height: "100%" },
   cameraOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.5)", paddingVertical: 6, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 4 },
   cameraText: { color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold" },
@@ -276,22 +251,22 @@ const styles = StyleSheet.create({
   tabBtnActive: { borderBottomColor: "#3390ec" },
   tabText: { fontSize: 14, color: "#888", fontFamily: "Inter_600SemiBold" },
   tabTextActive: { color: "#3390ec" },
-
   msgRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, gap: 8 },
   msgBubblePreview: { flex: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7 },
   msgSent: { backgroundColor: "#d4f5b8" },
   msgReceived: { backgroundColor: "#f2f2f2" },
   msgBubbleText: { fontSize: 14, color: "#0a0a0a", fontFamily: "Inter_400Regular" },
   msgTime: { fontSize: 11, color: "#999", fontFamily: "Inter_400Regular" },
-
   viewAllBtn: { paddingVertical: 13, alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#f0f0f0" },
   viewAllText: { fontSize: 14, color: "#3390ec", fontFamily: "Inter_600SemiBold" },
 
+  editChatBtn: { backgroundColor: "#6c5ce7", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, gap: 10, shadowColor: "#6c5ce7", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
+  editChatText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
   openChatBtn: { backgroundColor: "#3390ec", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, gap: 10, shadowColor: "#3390ec", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
   openChatText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", padding: 24 },
-  modalBox: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 340, shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
+  modalBox: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 340 },
   modalTitle: { fontSize: 17, fontWeight: "700", color: "#0a0a0a", fontFamily: "Inter_700Bold", marginBottom: 14 },
   modalInput: { borderWidth: 1.5, borderColor: "#3390ec", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: "#0a0a0a", fontFamily: "Inter_400Regular", marginBottom: 18 },
   modalBtns: { flexDirection: "row", gap: 12 },

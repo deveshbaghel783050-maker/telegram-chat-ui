@@ -13,30 +13,9 @@ import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
-import MessageBubble, { Message } from "@/components/MessageBubble";
+import MessageBubble from "@/components/MessageBubble";
+import { Message, useProfile } from "@/context/ProfileContext";
 import PatternSvg from "../assets/images/pattern.svg";
-
-const FAKE_CHAT: Message[] = [
-  { id: "f1",  text: "Hi",                              time: "10:00 AM", sent: true,  read: true  },
-  { id: "f2",  text: "Hi",                              time: "10:01 AM", sent: false              },
-  { id: "f3",  text: "How are you?",                    time: "10:02 AM", sent: true,  read: true  },
-  { id: "f4",  text: "I am fine.",                      time: "10:03 AM", sent: false              },
-  { id: "f5",  text: "What are you doing?",             time: "10:05 AM", sent: true,  read: true  },
-  { id: "f6",  text: "Nothing just chilling bhai 😎",   time: "10:06 AM", sent: false              },
-  { id: "f7",  text: "Nice 😄",                         time: "10:07 AM", sent: true,  read: true  },
-  { id: "f8",  text: "Haan bhai, tu bata kya chal rha", time: "10:08 AM", sent: false              },
-  { id: "f9",  text: "Kuch nhi yaar bas kaam",          time: "10:10 AM", sent: true,  read: true  },
-  { id: "f10", text: "Achha samjha",                    time: "10:11 AM", sent: false              },
-  { id: "f11", text: "Sale seen krrha he bss",          time: "11:28 AM", sent: false              },
-  { id: "f12", text: "ye done ha ab mat boLna ok and kheo mene host kar di jab batayega hata duga", time: "1:36 PM", sent: true, read: true },
-  { id: "f13", text: "ok",                              time: "1:36 PM", sent: true,  read: true  },
-  { id: "f14", text: "H",                               time: "1:37 PM", sent: false              },
-  { id: "f15", text: "ok",                              time: "1:37 PM", sent: true,  read: true  },
-  { id: "f16", text: "Bhot slow",                       time: "1:37 PM", sent: false              },
-  { id: "f17", text: "He",                              time: "1:37 PM", sent: false              },
-  { id: "f18", text: "Bhot",                            time: "1:37 PM", sent: false              },
-  { id: "f19", text: "HD se jyda slow",                 time: "1:38 PM", sent: false              },
-];
 
 const AUTO_REPLIES: [string, string[]][] = [
   ["hi",      ["Hello bhai! 👋", "Haan bol kya scene", "Hi hi!"]],
@@ -83,7 +62,7 @@ function TypingBubble() {
     <View style={ts.row}>
       <View style={ts.bubble}>
         <View style={ts.dots}>
-          <View style={[ts.dot]} />
+          <View style={ts.dot} />
           <View style={[ts.dot, { opacity: 0.55 }]} />
           <View style={[ts.dot, { opacity: 0.25 }]} />
         </View>
@@ -102,7 +81,7 @@ const ts = StyleSheet.create({
 type ListItem = Message | { id: string; _typing: true };
 
 export default function ChatScreen() {
-  const [messages, setMessages] = useState<Message[]>(FAKE_CHAT);
+  const { messages, addMessage, theirName } = useProfile();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -113,7 +92,7 @@ export default function ChatScreen() {
 
   function handleSend(text: string) {
     const userMsg: Message = { id: Date.now().toString(), text, time: nowTime(), sent: true, read: false };
-    setMessages((p) => [...p, userMsg]);
+    addMessage(userMsg);
     scrollToEnd();
     setIsTyping(true);
 
@@ -121,10 +100,7 @@ export default function ChatScreen() {
     setTimeout(() => {
       setIsTyping(false);
       const replyMsg: Message = { id: (Date.now() + 1).toString(), text: getReply(text), time: nowTime(), sent: false };
-      setMessages((p) => {
-        const updated = p.map((m, i) => (i === p.length - 1 && m.sent ? { ...m, read: true } : m));
-        return [...updated, replyMsg];
-      });
+      addMessage(replyMsg);
       scrollToEnd();
     }, delay);
   }
@@ -170,7 +146,7 @@ export default function ChatScreen() {
 
         {isTyping && (
           <View style={styles.typingBar}>
-            <Text style={styles.typingText}>FLASH is typing...</Text>
+            <Text style={styles.typingText}>{theirName} is typing...</Text>
           </View>
         )}
 
