@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -74,7 +74,7 @@ export default function ChatInput({ onSend }: Props) {
       <View style={styles.row}>
         <View style={styles.inputPill}>
           <Pressable style={styles.emojiBtn}>
-            <Ionicons name="happy-outline" size={26} color="#8a8a8a" />
+            <MaterialCommunityIcons name="emoticon-outline" size={27} color="#8a8a8a" />
           </Pressable>
 
           <TextInput
