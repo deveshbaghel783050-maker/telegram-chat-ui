@@ -29,11 +29,15 @@ export default function ChatHeader() {
               style={styles.avatar}
               contentFit="cover"
             />
+            <View style={styles.avatarLabel}>
+              <Text style={styles.avatarLabelText}>FLASH</Text>
+            </View>
           </View>
+
           <View style={styles.info}>
-            <Text style={styles.name}>FLASH</Text>
             <Text style={styles.status}>last seen recently</Text>
           </View>
+
           <Pressable style={styles.muteBtn}>
             <MaterialIcons name="volume-off" size={20} color="#555" />
           </Pressable>
@@ -62,7 +66,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    height: 56,
+    height: 58,
   },
   pill: {
     flexDirection: "row",
@@ -94,9 +98,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   avatarWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "#ffffff",
@@ -107,22 +111,31 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+  },
+  avatarLabel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingVertical: 2,
+    alignItems: "center",
+  },
+  avatarLabelText: {
+    color: "#ffffff",
+    fontSize: 8,
+    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.3,
   },
   info: {
     flex: 1,
   },
-  name: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0a0a0a",
-    fontFamily: "Inter_700Bold",
-  },
   status: {
-    fontSize: 12,
-    color: "#4a4a4a",
+    fontSize: 14,
+    color: "#1a1a1a",
     fontFamily: "Inter_400Regular",
   },
   muteBtn: {
