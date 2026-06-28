@@ -75,7 +75,7 @@ export default function ChatInput({ onSend }: Props) {
       <View style={styles.inputPill}>
         {/* Left: sticker/emoji icon */}
         <Pressable style={styles.emojiBtn}>
-          <MaterialCommunityIcons name="emoticon-outline" size={27} color="#8a8a8a" />
+          <MaterialCommunityIcons name="sticker-emoji" size={27} color="#8a8a8a" />
         </Pressable>
 
         {/* Middle: text input */}
