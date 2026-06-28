@@ -1,7 +1,7 @@
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useProfile } from "@/context/ProfileContext";
@@ -10,10 +10,10 @@ export default function ChatHeader() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 44 : insets.top;
   const { theirName, clearMessages } = useProfile();
-  const [showMenu, setShowMenu] = useState(false);
+
+  const initial = theirName.charAt(0).toUpperCase();
 
   function handleClearChat() {
-    setShowMenu(false);
     if (Platform.OS === "web") {
       clearMessages();
       return;
@@ -31,38 +31,39 @@ export default function ChatHeader() {
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
       <View style={styles.inner}>
-        {/* Back button */}
-        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+
+        {/* Back button — white circle */}
+        <Pressable style={styles.backCircle} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={22} color="#1a1a1a" />
         </Pressable>
 
-        {/* Name + Status (no avatar image) */}
-        <Pressable style={styles.centerBlock} onPress={() => router.back()}>
+        {/* Center pill: initial icon + name + mute + last seen */}
+        <Pressable style={styles.centerPill} onPress={() => router.back()}>
+          {/* Initial avatar — pure icon/CSS, no image */}
+          <View style={styles.initialCircle}>
+            <Text style={styles.initialText}>{initial}</Text>
+          </View>
+
           <View style={styles.textBlock}>
             <View style={styles.nameRow}>
               <Text style={styles.nameText} numberOfLines={1}>{theirName}</Text>
-              <MaterialIcons name="volume-off" size={16} color="rgba(255,255,255,0.7)" style={{ marginLeft: 4 }} />
+              <MaterialIcons name="volume-off" size={16} color="#666" style={{ marginLeft: 4 }} />
             </View>
-            <Text style={styles.statusText}>last seen recently</Text>
+            <Text style={styles.statusText} numberOfLines={1}>last seen recently</Text>
           </View>
         </Pressable>
 
-        {/* Right buttons */}
-        <View style={styles.rightBtns}>
-          <Pressable style={styles.iconBtn}>
-            <Feather name="phone" size={20} color="#fff" />
+        {/* Right pill: phone + more */}
+        <View style={styles.rightPill}>
+          <Pressable style={styles.pillBtn}>
+            <Feather name="phone" size={20} color="#1a1a1a" />
           </Pressable>
-
-          {/* Clear Chat button */}
-          <Pressable style={styles.clearBtn} onPress={handleClearChat}>
-            <Feather name="trash-2" size={15} color="#fff" />
-            <Text style={styles.clearText}>Clear</Text>
-          </Pressable>
-
-          <Pressable style={styles.iconBtn} onPress={() => router.push("/editor")}>
-            <Feather name="more-vertical" size={20} color="#fff" />
+          <View style={styles.pillDivider} />
+          <Pressable style={styles.pillBtn} onPress={handleClearChat}>
+            <Feather name="more-vertical" size={20} color="#1a1a1a" />
           </Pressable>
         </View>
+
       </View>
     </View>
   );
@@ -70,28 +71,65 @@ export default function ChatHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 4,
-    paddingBottom: 8,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
   },
   inner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
-    minHeight: 52,
+    gap: 8,
   },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+
+  backCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  centerBlock: {
+
+  centerPill: {
     flex: 1,
-    paddingHorizontal: 6,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: 999,
+    paddingLeft: 8,
+    paddingRight: 14,
+    paddingVertical: 8,
+    gap: 10,
+    minHeight: 52,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
+
+  initialCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#3390ec",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  initialText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
+  },
+
   textBlock: {
+    flex: 1,
     gap: 1,
   },
   nameRow: {
@@ -99,33 +137,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nameText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#fff",
+    color: "#0a0a0a",
     fontFamily: "Inter_700Bold",
   },
   statusText: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
+    color: "#777",
     fontFamily: "Inter_400Regular",
   },
-  rightBtns: {
+
+  rightPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    backgroundColor: "#ffffff",
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  clearBtn: {
-    flexDirection: "row",
+  pillBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    justifyContent: "center",
   },
-  clearText: {
-    color: "#fff",
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+  pillDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: "#e0e0e0",
+    marginHorizontal: 2,
   },
 });
