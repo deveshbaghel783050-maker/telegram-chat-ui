@@ -129,7 +129,11 @@ export default function ChatScreen() {
       <PatternOverlay />
       <ChatHeader />
 
-      <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
         <FlatList
           ref={flatListRef}
           data={listData}
@@ -144,7 +148,8 @@ export default function ChatScreen() {
           keyboardShouldPersistTaps="handled"
           onScroll={handleScroll}
           scrollEventThrottle={100}
-          onContentSizeChange={() => { if (!showScrollBtn) scrollToEnd(false); }}
+          onContentSizeChange={() => scrollToEnd(false)}
+          onLayout={() => scrollToEnd(false)}
         />
 
         {showScrollBtn && (
@@ -168,8 +173,23 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  listContent: { paddingVertical: 10, paddingBottom: 4 },
-  scrollBtn: { position: "absolute", right: 16, bottom: Platform.OS === "web" ? 90 : 90, width: 40, height: 40, borderRadius: 20, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 },
+  listContent: { paddingVertical: 10, paddingBottom: 4, flexGrow: 1, justifyContent: "flex-end" },
+  scrollBtn: {
+    position: "absolute",
+    right: 16,
+    bottom: Platform.OS === "web" ? 90 : 90,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   typingBar: { paddingHorizontal: 14, paddingBottom: 2 },
   typingText: { fontSize: 12, color: "rgba(255,255,255,0.9)", fontFamily: "Inter_400Regular", fontStyle: "italic" },
 });
