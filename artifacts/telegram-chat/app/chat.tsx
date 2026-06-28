@@ -127,7 +127,6 @@ export default function ChatScreen() {
     <View style={styles.root}>
       <LinearGradient colors={["#b2d4a8", "#6aab6a", "#4a8a4a"]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
       <PatternOverlay />
-      <ChatHeader />
 
       <KeyboardAvoidingView
         style={styles.flex}
