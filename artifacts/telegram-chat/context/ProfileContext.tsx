@@ -47,6 +47,7 @@ type AppContextType = {
   deleteMessage: (id: string) => void;
   flipSender: (id: string) => void;
   setMessages: (msgs: Message[]) => void;
+  clearMessages: () => void;
 };
 
 const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -87,11 +88,15 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setMessages((p) => p.map((m) => m.id === id ? { ...m, sent: !m.sent } : m));
   }
 
+  function clearMessages() {
+    setMessages([]);
+  }
+
   return (
     <AppContext.Provider value={{
       myName, myAvatarUri, setMyName, setMyAvatarUri,
       theirName, theirPhone, theirUsername, theirBio, theirAvatarUri, updateTheirProfile,
-      messages, addMessage, editMessage, deleteMessage, flipSender, setMessages,
+      messages, addMessage, editMessage, deleteMessage, flipSender, setMessages, clearMessages,
     }}>
       {children}
     </AppContext.Provider>

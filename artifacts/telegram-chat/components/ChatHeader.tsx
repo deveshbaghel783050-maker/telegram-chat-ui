@@ -1,8 +1,7 @@
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router } from "expo-router";
-import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useProfile } from "@/context/ProfileContext";
@@ -10,7 +9,24 @@ import { useProfile } from "@/context/ProfileContext";
 export default function ChatHeader() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 44 : insets.top;
-  const { theirName, theirAvatarUri } = useProfile();
+  const { theirName, clearMessages } = useProfile();
+  const [showMenu, setShowMenu] = useState(false);
+
+  function handleClearChat() {
+    setShowMenu(false);
+    if (Platform.OS === "web") {
+      clearMessages();
+      return;
+    }
+    Alert.alert(
+      "Clear Chat",
+      "All messages will be deleted. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Clear", style: "destructive", onPress: clearMessages },
+      ]
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
@@ -20,20 +36,8 @@ export default function ChatHeader() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
 
-        {/* Avatar + Name/Status */}
+        {/* Name + Status (no avatar image) */}
         <Pressable style={styles.centerBlock} onPress={() => router.back()}>
-          <View style={styles.avatarWrap}>
-            <Image
-              source={
-                theirAvatarUri
-                  ? { uri: theirAvatarUri }
-                  : require("../assets/images/flash_avatar.jpg")
-              }
-              style={styles.avatar}
-              contentFit="cover"
-            />
-            <View style={styles.onlineDot} />
-          </View>
           <View style={styles.textBlock}>
             <View style={styles.nameRow}>
               <Text style={styles.nameText} numberOfLines={1}>{theirName}</Text>
@@ -43,11 +47,18 @@ export default function ChatHeader() {
           </View>
         </Pressable>
 
-        {/* Right action buttons */}
+        {/* Right buttons */}
         <View style={styles.rightBtns}>
           <Pressable style={styles.iconBtn}>
             <Feather name="phone" size={20} color="#fff" />
           </Pressable>
+
+          {/* Clear Chat button */}
+          <Pressable style={styles.clearBtn} onPress={handleClearChat}>
+            <Feather name="trash-2" size={15} color="#fff" />
+            <Text style={styles.clearText}>Clear</Text>
+          </Pressable>
+
           <Pressable style={styles.iconBtn} onPress={() => router.push("/editor")}>
             <Feather name="more-vertical" size={20} color="#fff" />
           </Pressable>
@@ -65,7 +76,7 @@ const styles = StyleSheet.create({
   inner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 2,
     minHeight: 52,
   },
   iconBtn: {
@@ -77,36 +88,10 @@ const styles = StyleSheet.create({
   },
   centerBlock: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 4,
-  },
-  avatarWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.6)",
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-  },
-  onlineDot: {
-    position: "absolute",
-    bottom: 1,
-    right: 1,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#4cd964",
-    borderWidth: 2,
-    borderColor: "#6aab6a",
+    paddingHorizontal: 6,
+    justifyContent: "center",
   },
   textBlock: {
-    flex: 1,
     gap: 1,
   },
   nameRow: {
@@ -127,5 +112,20 @@ const styles = StyleSheet.create({
   rightBtns: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 2,
+  },
+  clearBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  clearText: {
+    color: "#fff",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
   },
 });
