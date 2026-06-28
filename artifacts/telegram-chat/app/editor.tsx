@@ -63,6 +63,7 @@ export default function EditorScreen() {
   const [addModal, setAddModal] = useState<AddModalState>(null);
   const [addText, setAddText] = useState("");
   const [addTime, setAddTime] = useState(nowTime());
+  const [addImageUri, setAddImageUri] = useState<string | null>(null);
 
   const [youNameEdit, setYouNameEdit] = useState(false);
   const [youNameVal, setYouNameVal] = useState(ctx.myName);
@@ -86,17 +87,24 @@ export default function EditorScreen() {
   function openAdd(asSent: boolean) {
     setAddText("");
     setAddTime(nowTime());
+    setAddImageUri(null);
     setAddModal({ asSent });
   }
 
+  async function handleAddPickImage() {
+    const uri = await pickImage();
+    if (uri) setAddImageUri(uri);
+  }
+
   function saveAdd() {
-    if (!addText.trim()) return;
+    if (!addText.trim() && !addImageUri) return;
     const msg: Message = {
       id: Date.now().toString(),
       text: addText.trim(),
       time: addTime.trim() || nowTime(),
       sent: addModal!.asSent,
       read: addModal!.asSent,
+      imageUri: addImageUri ?? undefined,
     };
     ctx.addMessage(msg);
     setAddModal(null);
@@ -340,15 +348,34 @@ export default function EditorScreen() {
             <Text style={styles.modalTitle}>
               Add Message as {addModal?.asSent ? "You" : ctx.theirName}
             </Text>
-            <Text style={styles.modalFieldLabel}>Text</Text>
-            <TextInput style={[styles.modalInput, { minHeight: 60 }]} value={addText} onChangeText={setAddText} multiline autoFocus placeholder="Type message..." placeholderTextColor="#bbb" />
+
+            {/* Image picker */}
+            <Pressable style={styles.imgPickBtn} onPress={handleAddPickImage}>
+              {addImageUri ? (
+                <View style={styles.imgPickPreviewWrap}>
+                  <Image source={{ uri: addImageUri }} style={styles.imgPickPreview} contentFit="cover" />
+                  <Pressable style={styles.imgPickRemove} onPress={() => setAddImageUri(null)}>
+                    <Ionicons name="close-circle" size={20} color="#e53935" />
+                  </Pressable>
+                  <Text style={styles.imgPickLabel}>Image selected ✓</Text>
+                </View>
+              ) : (
+                <View style={styles.imgPickEmpty}>
+                  <Ionicons name="image-outline" size={28} color="#3390ec" />
+                  <Text style={styles.imgPickEmptyText}>Upload Image (optional)</Text>
+                </View>
+              )}
+            </Pressable>
+
+            <Text style={styles.modalFieldLabel}>Text {addImageUri ? "(caption, optional)" : ""}</Text>
+            <TextInput style={[styles.modalInput, { minHeight: 50 }]} value={addText} onChangeText={setAddText} multiline placeholder={addImageUri ? "Add a caption..." : "Type message..."} placeholderTextColor="#bbb" />
             <Text style={styles.modalFieldLabel}>Time</Text>
             <TextInput style={styles.modalInput} value={addTime} onChangeText={setAddTime} placeholder="e.g. 2:30 PM" placeholderTextColor="#bbb" />
             <View style={styles.modalBtns}>
               <Pressable style={styles.modalCancel} onPress={() => setAddModal(null)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </Pressable>
-              <Pressable style={styles.modalSave} onPress={saveAdd}>
+              <Pressable style={[styles.modalSave, (!addText.trim() && !addImageUri) && { opacity: 0.4 }]} onPress={saveAdd}>
                 <Text style={styles.modalSaveText}>Add</Text>
               </Pressable>
             </View>
@@ -426,4 +453,12 @@ const styles = StyleSheet.create({
   modalCancelText: { fontSize: 15, color: "#555", fontFamily: "Inter_600SemiBold" },
   modalSave: { flex: 1, paddingVertical: 13, borderRadius: 12, backgroundColor: "#3390ec", alignItems: "center" },
   modalSaveText: { fontSize: 15, color: "#fff", fontFamily: "Inter_600SemiBold" },
+
+  imgPickBtn: { borderRadius: 14, borderWidth: 1.5, borderColor: "#e0e8ff", borderStyle: "dashed", marginBottom: 10, overflow: "hidden" },
+  imgPickEmpty: { alignItems: "center", justifyContent: "center", paddingVertical: 18, gap: 6 },
+  imgPickEmptyText: { fontSize: 13, color: "#3390ec", fontFamily: "Inter_500Medium" },
+  imgPickPreviewWrap: { alignItems: "center", paddingVertical: 10, gap: 6 },
+  imgPickPreview: { width: 140, height: 100, borderRadius: 10 },
+  imgPickRemove: { position: "absolute", top: 4, right: 8 },
+  imgPickLabel: { fontSize: 12, color: "#2a7a2a", fontFamily: "Inter_500Medium" },
 });

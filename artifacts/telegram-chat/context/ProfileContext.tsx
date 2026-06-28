@@ -7,6 +7,7 @@ export type Message = {
   sent: boolean;
   read?: boolean;
   edited?: boolean;
+  imageUri?: string;
 };
 
 const FAKE_CHAT: Message[] = [

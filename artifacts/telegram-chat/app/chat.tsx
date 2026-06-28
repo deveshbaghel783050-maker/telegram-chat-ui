@@ -90,12 +90,21 @@ export default function ChatScreen() {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated }), 80);
   }
 
-  function handleSend(text: string) {
-    const userMsg: Message = { id: Date.now().toString(), text, time: nowTime(), sent: true, read: false };
+  function handleSend(text: string, imageUri?: string) {
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      text,
+      time: nowTime(),
+      sent: true,
+      read: false,
+      imageUri,
+    };
     addMessage(userMsg);
     scrollToEnd();
-    setIsTyping(true);
 
+    if (imageUri) return;
+
+    setIsTyping(true);
     const delay = 900 + Math.random() * 1100;
     setTimeout(() => {
       setIsTyping(false);
