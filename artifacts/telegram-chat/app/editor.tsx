@@ -2,9 +2,8 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
-  Alert,
   Modal,
   Platform,
   Pressable,
@@ -24,11 +23,7 @@ function nowTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-async function pickImage(): Promise<string | null> {
-  if (Platform.OS === "web") {
-    Alert.alert("Info", "Image upload works on Expo Go (mobile app).");
-    return null;
-  }
+async function pickImageMobile(): Promise<string | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") return null;
   const result = await ImagePicker.launchImageLibraryAsync({
@@ -71,6 +66,10 @@ export default function EditorScreen() {
   const [themField, setThemField] = useState<string | null>(null);
   const [themVal, setThemVal] = useState("");
 
+  const myAvatarFileRef = useRef<HTMLInputElement | null>(null);
+  const theirAvatarFileRef = useRef<HTMLInputElement | null>(null);
+  const msgImageFileRef = useRef<HTMLInputElement | null>(null);
+
   function openEditMsg(msg: Message) {
     setEditMsg({ id: msg.id, text: msg.text, time: msg.time });
     setEditMsgText(msg.text);
@@ -91,9 +90,28 @@ export default function EditorScreen() {
     setAddModal({ asSent });
   }
 
-  async function handleAddPickImage() {
-    const uri = await pickImage();
-    if (uri) setAddImageUri(uri);
+  function handleMyAvatarPress() {
+    if (Platform.OS === "web") {
+      myAvatarFileRef.current && (myAvatarFileRef.current.value = "", myAvatarFileRef.current.click());
+      return;
+    }
+    pickImageMobile().then((u) => { if (u) ctx.setMyAvatarUri(u); });
+  }
+
+  function handleTheirAvatarPress() {
+    if (Platform.OS === "web") {
+      theirAvatarFileRef.current && (theirAvatarFileRef.current.value = "", theirAvatarFileRef.current.click());
+      return;
+    }
+    pickImageMobile().then((u) => { if (u) ctx.updateTheirProfile({ avatarUri: u }); });
+  }
+
+  function handleAddPickImage() {
+    if (Platform.OS === "web") {
+      msgImageFileRef.current && (msgImageFileRef.current.value = "", msgImageFileRef.current.click());
+      return;
+    }
+    pickImageMobile().then((u) => { if (u) setAddImageUri(u); });
   }
 
   function saveAdd() {
@@ -129,6 +147,18 @@ export default function EditorScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: Platform.OS === "web" ? 44 : insets.top }]}>
+      {/* Hidden file inputs for web */}
+      {Platform.OS === "web" && (
+        <>
+          <input ref={myAvatarFileRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e: any) => { const f = e.target.files?.[0]; if (f) ctx.setMyAvatarUri(URL.createObjectURL(f)); }} />
+          <input ref={theirAvatarFileRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e: any) => { const f = e.target.files?.[0]; if (f) ctx.updateTheirProfile({ avatarUri: URL.createObjectURL(f) }); }} />
+          <input ref={msgImageFileRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e: any) => { const f = e.target.files?.[0]; if (f) setAddImageUri(URL.createObjectURL(f)); }} />
+        </>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
@@ -160,7 +190,7 @@ export default function EditorScreen() {
             <Text style={styles.sectionLabel}>Your Profile</Text>
 
             <View style={styles.avatarRow}>
-              <Pressable onPress={async () => { const u = await pickImage(); if (u) ctx.setMyAvatarUri(u); }} style={styles.avatarWrap}>
+              <Pressable onPress={handleMyAvatarPress} style={styles.avatarWrap}>
                 {ctx.myAvatarUri
                   ? <Image source={{ uri: ctx.myAvatarUri }} style={styles.avatarImg} contentFit="cover" />
                   : <View style={styles.avatarPlaceholder}><Ionicons name="person" size={36} color="#aaa" /></View>
@@ -220,7 +250,7 @@ export default function EditorScreen() {
             <Text style={styles.sectionLabel}>Their Profile (FLASH)</Text>
 
             <View style={styles.avatarRow}>
-              <Pressable onPress={async () => { const u = await pickImage(); if (u) ctx.updateTheirProfile({ avatarUri: u }); }} style={styles.avatarWrap}>
+              <Pressable onPress={handleTheirAvatarPress} style={styles.avatarWrap}>
                 {ctx.theirAvatarUri
                   ? <Image source={{ uri: ctx.theirAvatarUri }} style={styles.avatarImg} contentFit="cover" />
                   : <Image source={require("../assets/images/flash_avatar.jpg")} style={styles.avatarImg} contentFit="cover" />
