@@ -71,33 +71,36 @@ export default function ChatInput({ onSend }: Props) {
         </View>
       )}
 
-      <View style={styles.row}>
-        <View style={styles.inputPill}>
-          <Pressable style={styles.emojiBtn}>
-            <MaterialCommunityIcons name="emoticon-outline" size={27} color="#8a8a8a" />
-          </Pressable>
+      {/* Single pill — emoji | text | paperclip | mic circle — all inside, no gap */}
+      <View style={styles.inputPill}>
+        {/* Left: sticker/emoji icon */}
+        <Pressable style={styles.emojiBtn}>
+          <MaterialCommunityIcons name="emoticon-outline" size={27} color="#8a8a8a" />
+        </Pressable>
 
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder={pendingImage ? "Add a caption..." : "Message"}
-            placeholderTextColor="#b0b0b0"
-            style={styles.input}
-            multiline
-            returnKeyType="default"
-            onSubmitEditing={handleSend}
-          />
+        {/* Middle: text input */}
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder={pendingImage ? "Add a caption..." : "Message"}
+          placeholderTextColor="#b0b0b0"
+          style={styles.input}
+          multiline
+          returnKeyType="default"
+          onSubmitEditing={handleSend}
+        />
 
-          <Pressable style={styles.attachBtn} onPress={handlePickImage}>
-            <Feather name="paperclip" size={22} color={pendingImage ? "#3390ec" : "#8a8a8a"} />
-          </Pressable>
-        </View>
+        {/* Paperclip */}
+        <Pressable style={styles.attachBtn} onPress={handlePickImage}>
+          <Feather name="paperclip" size={22} color={pendingImage ? "#3390ec" : "#8a8a8a"} />
+        </Pressable>
 
+        {/* Mic / Send — blue circle, flush inside the pill */}
         <Pressable style={styles.actionCircle} onPress={hasContent ? handleSend : undefined}>
           {hasContent ? (
-            <Ionicons name="send" size={20} color="#ffffff" />
+            <Ionicons name="send" size={19} color="#ffffff" />
           ) : (
-            <Ionicons name="mic" size={22} color="#ffffff" />
+            <Ionicons name="mic" size={21} color="#ffffff" />
           )}
         </Pressable>
       </View>
@@ -106,8 +109,11 @@ export default function ChatInput({ onSend }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { paddingTop: 8, paddingHorizontal: 10, paddingBottom: 12 },
-  row: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+  container: {
+    paddingTop: 8,
+    paddingHorizontal: 10,
+    paddingBottom: 12,
+  },
 
   previewRow: {
     flexDirection: "row",
@@ -130,22 +136,28 @@ const styles = StyleSheet.create({
   previewRemove: { padding: 2 },
 
   inputPill: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
     borderRadius: 999,
     paddingLeft: 6,
-    paddingRight: 10,
-    paddingVertical: Platform.OS === "ios" ? 10 : 6,
+    paddingRight: 4,
+    paddingVertical: Platform.OS === "ios" ? 8 : 4,
     minHeight: 50,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
   },
-  emojiBtn: { paddingHorizontal: 8, paddingVertical: 2, justifyContent: "center" },
+
+  emojiBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   input: {
     flex: 1,
     fontSize: 16,
@@ -156,18 +168,25 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: 4,
   },
-  attachBtn: { paddingHorizontal: 6, paddingVertical: 2, justifyContent: "center" },
+
+  attachBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   actionCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: "#3390ec",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#3390ec",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
   },
 });
