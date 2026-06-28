@@ -164,11 +164,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     maxHeight: 120,
     minHeight: 22,
-    paddingTop: 6,
-    paddingBottom: 0,
+    paddingVertical: 0,
     paddingHorizontal: 4,
-    textAlignVertical: "center",
-    alignSelf: "center",
   },
 
   attachBtn: {
