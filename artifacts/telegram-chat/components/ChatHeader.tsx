@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const AVATAR = 56;
+
 export default function ChatHeader() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 44 : insets.top;
@@ -18,12 +20,22 @@ export default function ChatHeader() {
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
       <View style={styles.inner}>
-        <Pressable style={styles.pillLeft} onPress={() => router.back()}>
+        <Pressable style={styles.backCircle} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color="#1a1a1a" />
         </Pressable>
 
-        <View style={styles.centerRow}>
-          <View style={styles.avatarWrap}>
+        <View style={styles.centerPillWrap}>
+          <View style={styles.centerPill}>
+            <View style={styles.pillTextBlock}>
+              <View style={styles.nameRow}>
+                <Text style={styles.nameText} numberOfLines={1}>FLASH</Text>
+                <MaterialIcons name="volume-off" size={18} color="#555" style={styles.muteIcon} />
+              </View>
+              <Text style={styles.statusText} numberOfLines={1}>last seen recently</Text>
+            </View>
+          </View>
+
+          <View style={styles.avatarAbsolute}>
             <Image
               source={require("../assets/images/flash_avatar.jpg")}
               style={styles.avatar}
@@ -33,15 +45,9 @@ export default function ChatHeader() {
               <Text style={styles.flashText}>FLASH</Text>
             </View>
           </View>
-
-          <Text style={styles.statusText}>last seen recently</Text>
-
-          <Pressable style={styles.muteBtn}>
-            <MaterialIcons name="volume-off" size={21} color="#333" />
-          </Pressable>
         </View>
 
-        <View style={styles.pillRight}>
+        <View style={styles.rightPill}>
           <Pressable style={styles.pillAction}>
             <Feather name="phone" size={20} color="#1a1a1a" />
           </Pressable>
@@ -64,31 +70,116 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    minHeight: 62,
+    minHeight: 64,
   },
 
-  pillLeft: {
+  backCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: "#ffffff",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.13,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
 
-  pillRight: {
+  centerPillWrap: {
+    flex: 1,
+    position: "relative",
+    height: 56,
+    justifyContent: "center",
+  },
+  centerPill: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 999,
+    paddingLeft: AVATAR - 8,
+    paddingRight: 14,
+    paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+    justifyContent: "center",
+    minHeight: 56,
+  },
+  pillTextBlock: {
+    gap: 1,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  nameText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0a0a0a",
+    fontFamily: "Inter_700Bold",
+  },
+  muteIcon: {
+    marginTop: 1,
+  },
+  statusText: {
+    fontSize: 12.5,
+    color: "#666",
+    fontFamily: "Inter_400Regular",
+  },
+
+  avatarAbsolute: {
+    position: "absolute",
+    left: -4,
+    top: "50%",
+    marginTop: -(AVATAR / 2),
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
+    overflow: "hidden",
+    borderWidth: 2.5,
+    borderColor: "#ffffff",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+  },
+  flashBadge: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.50)",
+    paddingVertical: 2.5,
+    alignItems: "center",
+  },
+  flashText: {
+    color: "#ffffff",
+    fontSize: 8,
+    fontWeight: "800",
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.4,
+  },
+
+  rightPill: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.13,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -100,52 +191,5 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: "#ddd",
     marginHorizontal: 2,
-  },
-
-  centerRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  avatarWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    overflow: "hidden",
-    borderWidth: 2.5,
-    borderColor: "rgba(255,255,255,0.9)",
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-  },
-  flashBadge: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(0,0,0,0.52)",
-    paddingVertical: 3,
-    alignItems: "center",
-  },
-  flashText: {
-    color: "#ffffff",
-    fontSize: 9,
-    fontWeight: "800",
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.5,
-  },
-
-  statusText: {
-    flex: 1,
-    fontSize: 14,
-    color: "#111",
-    fontFamily: "Inter_400Regular",
-  },
-
-  muteBtn: {
-    padding: 4,
   },
 });
