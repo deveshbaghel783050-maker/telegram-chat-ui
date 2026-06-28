@@ -1,4 +1,5 @@
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
@@ -9,7 +10,7 @@ import { useProfile } from "@/context/ProfileContext";
 export default function ChatHeader() {
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 44 : insets.top;
-  const { theirName, clearMessages } = useProfile();
+  const { theirName, theirAvatarUri, clearMessages } = useProfile();
 
   const initial = theirName.charAt(0).toUpperCase();
 
@@ -37,12 +38,19 @@ export default function ChatHeader() {
           <Ionicons name="arrow-back" size={22} color="#1a1a1a" />
         </Pressable>
 
-        {/* Center pill: initial icon + name + mute + last seen */}
+        {/* Center pill: avatar/initial + name + mute + last seen */}
         <Pressable style={styles.centerPill} onPress={() => router.back()}>
-          {/* Initial avatar — pure icon/CSS, no image */}
-          <View style={styles.initialCircle}>
-            <Text style={styles.initialText}>{initial}</Text>
-          </View>
+          {theirAvatarUri ? (
+            <Image
+              source={{ uri: theirAvatarUri }}
+              style={styles.avatarImg}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={styles.initialCircle}>
+              <Text style={styles.initialText}>{initial}</Text>
+            </View>
+          )}
 
           <View style={styles.textBlock}>
             <View style={styles.nameRow}>
@@ -112,6 +120,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  avatarImg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    flexShrink: 0,
+  },
   initialCircle: {
     width: 36,
     height: 36,
