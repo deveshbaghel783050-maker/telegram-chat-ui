@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -73,9 +73,9 @@ export default function ChatInput({ onSend }: Props) {
 
       {/* Single pill — emoji | text | paperclip | mic circle — all inside, no gap */}
       <View style={styles.inputPill}>
-        {/* Left: emoji button — real emoji character like Telegram/WhatsApp */}
+        {/* Left: emoji button */}
         <Pressable style={styles.emojiBtn}>
-          <Text style={styles.emojiChar}>😊</Text>
+          <Ionicons name="happy-outline" size={26} color="#8a8a8a" />
         </Pressable>
 
         {/* Middle: text input */}
@@ -157,11 +157,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  emojiChar: {
-    fontSize: 24,
-    lineHeight: 28,
-  },
-
   input: {
     flex: 1,
     fontSize: 16,
