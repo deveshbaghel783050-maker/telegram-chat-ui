@@ -18,32 +18,34 @@ export default function ChatHeader() {
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
       <View style={styles.inner}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+        <Pressable style={styles.pill} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={22} color="#1a1a1a" />
         </Pressable>
 
-        <View style={styles.avatarWrap}>
-          <Image
-            source={require("../assets/images/flash_avatar.jpg")}
-            style={styles.avatar}
-            contentFit="cover"
-          />
+        <View style={styles.centerRow}>
+          <View style={styles.avatarWrap}>
+            <Image
+              source={require("../assets/images/flash_avatar.jpg")}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          </View>
+          <View style={styles.info}>
+            <Text style={styles.name}>FLASH</Text>
+            <Text style={styles.status}>last seen recently</Text>
+          </View>
+          <Pressable style={styles.muteBtn}>
+            <MaterialIcons name="volume-off" size={20} color="#555" />
+          </Pressable>
         </View>
 
-        <View style={styles.info}>
-          <Text style={styles.name}>FLASH</Text>
-          <Text style={styles.status}>last seen recently</Text>
-        </View>
-
-        <View style={styles.actions}>
-          <Pressable style={styles.actionBtn}>
-            <MaterialIcons name="volume-off" size={22} color="#6a6a6a" />
+        <View style={styles.pill}>
+          <Pressable style={styles.pillAction}>
+            <Feather name="phone" size={20} color="#1a1a1a" />
           </Pressable>
-          <Pressable style={styles.actionBtn}>
-            <Feather name="phone" size={21} color="#1a1a1a" />
-          </Pressable>
-          <Pressable style={styles.actionBtn}>
-            <Feather name="more-vertical" size={21} color="#1a1a1a" />
+          <View style={styles.pillDivider} />
+          <Pressable style={styles.pillAction}>
+            <Feather name="more-vertical" size={20} color="#1a1a1a" />
           </Pressable>
         </View>
       </View>
@@ -53,59 +55,77 @@ export default function ChatHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#ffffff",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 3,
-    zIndex: 10,
+    paddingHorizontal: 10,
+    paddingBottom: 8,
   },
   inner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    gap: 8,
     height: 56,
   },
-  backBtn: {
-    padding: 4,
-    marginRight: 2,
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pillAction: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  pillDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: "#ddd",
+    marginHorizontal: 2,
+  },
+  centerRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   avatarWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     overflow: "hidden",
-    marginRight: 10,
+    borderWidth: 2,
+    borderColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   info: {
     flex: 1,
   },
   name: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#0a0a0a",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Inter_700Bold",
   },
   status: {
-    fontSize: 13,
-    color: "#7a7a7a",
+    fontSize: 12,
+    color: "#4a4a4a",
     fontFamily: "Inter_400Regular",
   },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionBtn: {
-    padding: 6,
-    marginLeft: 2,
+  muteBtn: {
+    padding: 4,
   },
 });
