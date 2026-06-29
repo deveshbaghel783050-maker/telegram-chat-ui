@@ -192,6 +192,7 @@ const styles = StyleSheet.create({
     minHeight: 22,
     paddingVertical: 0,
     paddingHorizontal: 4,
+    textAlignVertical: "center",
   },
 
   attachBtn: {
