@@ -148,7 +148,16 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7a9e72" }]} />
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7ab870" }]} />
+      <View style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]} pointerEvents="none">
+        <PatternSvg
+          width="100%"
+          height="100%"
+          viewBox="0 0 1440 2960"
+          preserveAspectRatio="xMidYMid slice"
+          fill="#559e4e"
+        />
+      </View>
       <ChatHeader />
 
       <KeyboardAvoidingView
