@@ -160,9 +160,9 @@ function buildBubble(msg: Message): string {
 // ─── Input bar HTML ───────────────────────────────────────────────────────────
 function buildInputBar(): string {
   return `
-    <div style="position:absolute;bottom:${NAV_H}px;left:0;right:0;height:${INPUT_H}px;display:flex;align-items:center;padding:0 10px;gap:8px;box-sizing:border-box;">
-      <!-- Input pill (emoji + text + paperclip) -->
-      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding-left:4px;padding-right:8px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);gap:0;">
+    <div style="position:absolute;bottom:${NAV_H}px;left:0;right:0;height:${INPUT_H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;">
+      <!-- Single pill — emoji | text | paperclip | mic circle — all inside (matches ChatInput.tsx) -->
+      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding-left:6px;padding-right:4px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
         <!-- Emoji button -->
         <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           ${SVG_SMILEY}
@@ -170,13 +170,13 @@ function buildInputBar(): string {
         <!-- Placeholder text -->
         <div style="flex:1;font-size:16px;color:#b0b0b0;font-family:'Inter_400Regular','Inter',sans-serif;">Message</div>
         <!-- Paperclip -->
-        <div style="padding:4px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           ${SVG_PAPERCLIP}
         </div>
-      </div>
-      <!-- Blue mic circle — separate from pill, like real Telegram -->
-      <div style="width:46px;height:46px;border-radius:23px;background:#3390ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(51,144,236,0.45);">
-        ${SVG_MIC}
+        <!-- Blue mic circle — INSIDE pill (matching screen layout in ChatInput.tsx) -->
+        <div style="width:42px;height:42px;border-radius:21px;background:#3390ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(51,144,236,0.35);">
+          ${SVG_MIC}
+        </div>
       </div>
     </div>`;
 }
