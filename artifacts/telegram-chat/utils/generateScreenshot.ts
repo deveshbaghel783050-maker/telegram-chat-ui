@@ -86,8 +86,7 @@ function buildStatusBar(phone: string): string {
   const time = seedTime(phone);
   return `
     <div style="position:absolute;top:0;left:0;right:0;height:${STATUS_H}px;display:flex;align-items:center;padding:0 14px;box-sizing:border-box;">
-      <span style="color:#fff;font-size:13px;font-weight:700;font-family:'Inter_700Bold','Inter',sans-serif;min-width:38px;">${time}</span>
-      <span style="flex:1;color:rgba(255,255,255,0.45);font-size:9px;text-align:center;font-family:'Inter_400Regular','Inter',sans-serif;">${phone}</span>
+      <span style="color:#fff;font-size:13px;font-weight:700;font-family:'Inter_700Bold','Inter',sans-serif;">${time}</span>
     </div>`;
 }
 
@@ -208,23 +207,68 @@ function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// ─── Filler messages to fill empty space ─────────────────────────────────────
+const FILLER_MSGS: { sent: boolean; text: string }[] = [
+  { sent: true,  text: "Theek hai yaar 👍" },
+  { sent: false, text: "Haan bilkul" },
+  { sent: true,  text: "Okay" },
+  { sent: false, text: "Chal baat karte hain baad mein" },
+  { sent: true,  text: "Sure, talk later!" },
+  { sent: false, text: "Haan, bye 😊" },
+];
+
+function padMessages(messages: Message[], minCount: number): Message[] {
+  if (messages.length >= minCount) return messages;
+  const padded = [...messages];
+  let fi = 0;
+  const baseHour = 15;
+  while (padded.length < minCount) {
+    const f = FILLER_MSGS[fi % FILLER_MSGS.length];
+    const idx = padded.length;
+    padded.push({
+      id: `filler_${idx}`,
+      text: f.text,
+      sent: f.sent,
+      time: `${baseHour}:${(idx * 6) % 60 < 10 ? "0" : ""}${(idx * 6) % 60} PM`,
+      read: f.sent,
+    });
+    fi++;
+  }
+  return padded;
+}
+
+// ─── Pre-load pattern as data URL (fixes html2canvas CORS issue) ──────────────
+async function loadPatternDataUrl(): Promise<string | null> {
+  try {
+    const res = await fetch("/pattern.svg");
+    if (!res.ok) return null;
+    const text = await res.text();
+    const b64  = btoa(unescape(encodeURIComponent(text)));
+    return `data:image/svg+xml;base64,${b64}`;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Main builder ─────────────────────────────────────────────────────────────
-function buildChatHtml(user: RandomUser, messages: Message[]): string {
+function buildChatHtml(user: RandomUser, messages: Message[], patternDataUrl: string | null): string {
   const msgAreaTop    = STATUS_H + HEADER_H;
   const msgAreaBottom = INPUT_H + NAV_H;
 
-  const bubblesHtml = messages
-    .slice(-12)
-    .map(buildBubble)
-    .join("");
+  const filled      = padMessages(messages, 14);
+  const bubblesHtml = filled.map(buildBubble).join("");
+
+  const patternHtml = patternDataUrl
+    ? `<img src="${patternDataUrl}"
+         style="position:absolute;inset:0;width:100%;height:100%;opacity:0.18;object-fit:cover;pointer-events:none;" />`
+    : "";
 
   return `
     <!-- Green gradient background -->
     <div style="position:absolute;inset:0;background:linear-gradient(180deg,#b2d4a8 0%,#6aab6a 50%,#4a8a4a 100%);"></div>
 
     <!-- Pattern overlay -->
-    <img src="/pattern.svg" crossorigin="anonymous"
-      style="position:absolute;inset:0;width:100%;height:100%;opacity:0.18;object-fit:cover;pointer-events:none;" />
+    ${patternHtml}
 
     <!-- Status bar -->
     ${buildStatusBar(user.phone)}
@@ -253,6 +297,9 @@ export async function generateChatScreenshot(
   messages: Message[],
   _myName: string,
 ): Promise<string> {
+  // Pre-fetch pattern as data URL so html2canvas can render it
+  const patternDataUrl = await loadPatternDataUrl();
+
   const container = document.createElement("div");
   container.style.cssText = [
     `position:fixed`,
@@ -265,10 +312,10 @@ export async function generateChatScreenshot(
     `font-family:'Inter_400Regular','Inter',-apple-system,sans-serif`,
   ].join(";");
 
-  container.innerHTML = buildChatHtml(user, messages);
+  container.innerHTML = buildChatHtml(user, messages, patternDataUrl);
   document.body.appendChild(container);
 
-  // Let fonts + pattern image settle
+  // Let fonts settle
   await document.fonts.ready;
   await new Promise<void>((r) => setTimeout(r, 120));
 
