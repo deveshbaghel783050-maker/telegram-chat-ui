@@ -239,23 +239,33 @@ function padMessages(messages: Message[], minCount: number): Message[] {
 }
 
 // ─── Load pre-rendered pattern PNG → HTMLCanvasElement ───────────────────────
-// Uses a static PNG (pattern-bg.png) pre-generated from the SVG.
-// PNG is same-origin → no canvas taint → toDataURL() always works.
+// Uses fetch → blob URL to guarantee same-origin (no canvas taint, no CORS block).
+// Plain img.src="/pattern-bg.png" can silently fail in some Expo web contexts.
 async function renderPatternToCanvas(targetW: number, targetH: number): Promise<HTMLCanvasElement | null> {
-  return new Promise<HTMLCanvasElement | null>((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width  = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(null); return; }
-      ctx.drawImage(img, 0, 0, targetW, targetH);
-      resolve(canvas);
-    };
-    img.onerror = () => resolve(null);
-    img.src = "/pattern-bg.png";
-  });
+  try {
+    const res  = await fetch("/pattern-bg.png");
+    if (!res.ok) return null;
+    const blob    = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    return await new Promise<HTMLCanvasElement | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl);
+        const canvas = document.createElement("canvas");
+        canvas.width  = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        resolve(canvas);
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+      img.src = blobUrl;
+    });
+  } catch {
+    return null;
+  }
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────

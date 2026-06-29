@@ -84,11 +84,26 @@ export default function ChatScreen() {
     if (Platform.OS !== "web") return;
     setDownloading(true);
     try {
-      // Capture exactly what's visible on screen — no fake HTML rebuild
+      // 1. Scroll to bottom so latest messages are fully visible
+      flatListRef.current?.scrollToEnd({ animated: false });
+      // Wait for scroll + layout to settle
+      await new Promise<void>((r) => setTimeout(r, 350));
+
+      // 2. Hide the download button so it doesn't appear in the screenshot
+      const dlBtn = document.getElementById("chat-download-btn");
+      if (dlBtn) dlBtn.style.visibility = "hidden";
+
       const rootEl    = document.getElementById("chat-root");
       const patternEl = document.getElementById("chat-pattern");
-      if (!rootEl) return;
-      const dataUrl = await captureDomScreenshot(rootEl, patternEl);
+      let dataUrl = "";
+      try {
+        if (rootEl) dataUrl = await captureDomScreenshot(rootEl, patternEl);
+      } finally {
+        // Restore download button
+        if (dlBtn) dlBtn.style.visibility = "";
+      }
+
+      if (!dataUrl) return;
       const link = document.createElement("a");
       link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
@@ -189,7 +204,7 @@ export default function ChatScreen() {
       </KeyboardAvoidingView>
 
       {Platform.OS === "web" && (
-        <Pressable style={[styles.downloadBtn, downloading && { opacity: 0.6 }]} onPress={handleDownload} disabled={downloading}>
+        <Pressable nativeID="chat-download-btn" style={[styles.downloadBtn, downloading && { opacity: 0.6 }]} onPress={handleDownload} disabled={downloading}>
           {downloading
             ? <Ionicons name="hourglass-outline" size={22} color="#fff" />
             : <Ionicons name="download-outline" size={22} color="#fff" />
