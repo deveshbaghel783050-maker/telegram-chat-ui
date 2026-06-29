@@ -138,7 +138,7 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.root} nativeID="chat-root">
-      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7ab870" }]} />
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7ab870" }]} nativeID="chat-bg" />
       <View style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]} pointerEvents="none" nativeID="chat-pattern">
         <PatternSvg
           width="100%"

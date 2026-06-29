@@ -308,8 +308,18 @@ export async function captureDomScreenshot(
   const W = rootElement.offsetWidth;
   const H = rootElement.offsetHeight;
 
-  // Hide SVG pattern — html2canvas silently fails on SVG
+  // Step 1: Pre-load pattern PNG in parallel — must finish before compositing
+  const patternCanvas = await renderPatternToCanvas(W * SCALE, H * SCALE);
+
+  // Step 2: Hide BOTH the green background View AND the SVG pattern so
+  //         html2canvas captures chat UI with transparent background only.
+  //         If we leave the green bg div visible, it paints over the pattern layer.
+  const bgEl = document.getElementById("chat-bg");
+  if (bgEl)      bgEl.style.visibility      = "hidden";
   if (patternElement) patternElement.style.visibility = "hidden";
+
+  // Step 3: Wait one animation frame + extra buffer for DOM to repaint
+  await new Promise<void>((r) => requestAnimationFrame(() => setTimeout(r, 200)));
 
   let chatCanvas: HTMLCanvasElement;
   try {
@@ -317,32 +327,35 @@ export async function captureDomScreenshot(
       width:  W,
       height: H,
       scale:  SCALE,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#7ab870",
-      logging: false,
+      useCORS:         true,
+      allowTaint:      true,
+      backgroundColor: null,   // transparent — so our composite bg shows through
+      logging:         false,
     });
   } finally {
+    // Restore immediately so screen flicker is minimal
+    if (bgEl)      bgEl.style.visibility      = "";
     if (patternElement) patternElement.style.visibility = "";
   }
 
-  // Composite: green bg + pattern PNG (0.55 opacity) + chat UI
-  const patternCanvas = await renderPatternToCanvas(W * SCALE, H * SCALE);
-
+  // Step 4: Composite — green fill → pattern (0.55 opacity) → chat UI (transparent bg)
   const final = document.createElement("canvas");
   final.width  = W * SCALE;
   final.height = H * SCALE;
   const ctx = final.getContext("2d")!;
 
+  // Layer 1: solid green base
   ctx.fillStyle = "#7ab870";
   ctx.fillRect(0, 0, final.width, final.height);
 
+  // Layer 2: pattern doodles at 0.55 opacity
   if (patternCanvas) {
     ctx.globalAlpha = 0.55;
     ctx.drawImage(patternCanvas, 0, 0, final.width, final.height);
     ctx.globalAlpha = 1.0;
   }
 
+  // Layer 3: chat UI (header + bubbles + input — transparent bg, pattern shows through)
   ctx.drawImage(chatCanvas, 0, 0);
 
   return final.toDataURL("image/png");
