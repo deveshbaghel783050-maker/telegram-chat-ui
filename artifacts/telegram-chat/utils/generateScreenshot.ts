@@ -160,10 +160,11 @@ function buildBubble(msg: Message): string {
 // ─── Input bar HTML ───────────────────────────────────────────────────────────
 function buildInputBar(): string {
   return `
-    <div style="position:absolute;bottom:${NAV_H}px;left:0;right:0;height:${INPUT_H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;">
-      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding-left:4px;padding-right:4px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);gap:0;">
+    <div style="position:absolute;bottom:${NAV_H}px;left:0;right:0;height:${INPUT_H}px;display:flex;align-items:center;padding:0 10px;gap:8px;box-sizing:border-box;">
+      <!-- Input pill (emoji + text + paperclip) -->
+      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding-left:4px;padding-right:8px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);gap:0;">
         <!-- Emoji button -->
-        <div style="padding:4px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           ${SVG_SMILEY}
         </div>
         <!-- Placeholder text -->
@@ -172,10 +173,10 @@ function buildInputBar(): string {
         <div style="padding:4px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           ${SVG_PAPERCLIP}
         </div>
-        <!-- Blue mic circle -->
-        <div style="width:42px;height:42px;border-radius:21px;background:#3390ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(51,144,236,0.4);">
-          ${SVG_MIC}
-        </div>
+      </div>
+      <!-- Blue mic circle — separate from pill, like real Telegram -->
+      <div style="width:46px;height:46px;border-radius:23px;background:#3390ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(51,144,236,0.45);">
+        ${SVG_MIC}
       </div>
     </div>`;
 }
@@ -271,16 +272,20 @@ function buildChatHtml(user: RandomUser, messages: Message[], patternSvgText: st
   const filled      = padMessages(messages, 14);
   const bubblesHtml = filled.map(buildBubble).join("");
 
-  // Inline SVG exactly like chat.tsx's <PatternSvg> — most reliable for html2canvas
-  const patternHtml = patternSvgText
-    ? `<div style="position:absolute;inset:0;opacity:0.18;pointer-events:none;overflow:hidden;">${patternSvgText}</div>`
+  // Inline SVG exactly like chat.tsx's <PatternSvg> with fill="#559e4e" at opacity 0.55
+  const patternWithFill = patternSvgText
+    ? patternSvgText.replace(/<svg([^>]*)>/, (_, attrs) => `<svg${attrs} fill="#559e4e">`)
+    : null;
+
+  const patternHtml = patternWithFill
+    ? `<div style="position:absolute;inset:0;opacity:0.55;pointer-events:none;overflow:hidden;">${patternWithFill}</div>`
     : "";
 
   return `
-    <!-- Green gradient background -->
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,#b2d4a8 0%,#6aab6a 50%,#4a8a4a 100%);"></div>
+    <!-- Solid green background matching chat.tsx (#7ab870) -->
+    <div style="position:absolute;inset:0;background:#7ab870;"></div>
 
-    <!-- Pattern overlay (inline SVG, no CORS, matches chat.tsx) -->
+    <!-- Pattern overlay (inline SVG with darker green fill, matches chat.tsx) -->
     ${patternHtml}
 
     <!-- Header — starts at top:0, no status bar gap -->
