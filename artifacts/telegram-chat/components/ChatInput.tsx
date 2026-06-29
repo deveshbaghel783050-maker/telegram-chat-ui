@@ -189,10 +189,12 @@ const styles = StyleSheet.create({
     color: "#0a0a0a",
     fontFamily: "Inter_400Regular",
     maxHeight: 120,
-    minHeight: 22,
+    minHeight: 40,
     paddingVertical: 0,
     paddingHorizontal: 4,
     textAlignVertical: "center",
+    includeFontPadding: false,
+    lineHeight: 20,
   },
 
   attachBtn: {
