@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "tLKk9036aIvtthwrhOVYO"
+uri = "file://artifacts/telegram-chat/web/pattern-bg.png"
+type = "image"
+title = "Pattern Background PNG (automation screenshots mein use hogi)"
