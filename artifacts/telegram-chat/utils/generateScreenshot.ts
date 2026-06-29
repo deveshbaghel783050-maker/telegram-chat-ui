@@ -3,6 +3,11 @@ import { Message } from "@/context/ProfileContext";
 import html2canvas from "html2canvas";
 import { RandomUser } from "./randomData";
 
+// Metro statically resolves this at bundle time → correct asset URI on web.
+// Must be at module top-level so Metro can analyze it.
+// @ts-ignore
+const _PATTERN_ASSET = require("../assets/images/pattern-bg.png") as string;
+
 const W = 390;
 const H = 844;
 
@@ -239,33 +244,27 @@ function padMessages(messages: Message[], minCount: number): Message[] {
 }
 
 // ─── Load pre-rendered pattern PNG → HTMLCanvasElement ───────────────────────
-// Uses fetch → blob URL to guarantee same-origin (no canvas taint, no CORS block).
-// Plain img.src="/pattern-bg.png" can silently fail in some Expo web contexts.
+// _PATTERN_ASSET is resolved by Metro at bundle time — on web it is a URI string
+// pointing to the bundled asset (e.g. /_expo/static/media/pattern-bg.xxxx.png).
+// No runtime network fetch to /pattern-bg.png (which Metro intercepts as HTML).
 async function renderPatternToCanvas(targetW: number, targetH: number): Promise<HTMLCanvasElement | null> {
-  try {
-    const res  = await fetch("/pattern-bg.png");
-    if (!res.ok) return null;
-    const blob    = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
+  const src: string = typeof _PATTERN_ASSET === "string" ? _PATTERN_ASSET : "";
+  if (!src) return null;
 
-    return await new Promise<HTMLCanvasElement | null>((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(blobUrl);
-        const canvas = document.createElement("canvas");
-        canvas.width  = targetW;
-        canvas.height = targetH;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { resolve(null); return; }
-        ctx.drawImage(img, 0, 0, targetW, targetH);
-        resolve(canvas);
-      };
-      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
-      img.src = blobUrl;
-    });
-  } catch {
-    return null;
-  }
+  return new Promise<HTMLCanvasElement | null>((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width  = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(null); return; }
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      resolve(canvas);
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
