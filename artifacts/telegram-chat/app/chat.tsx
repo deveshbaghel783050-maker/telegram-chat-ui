@@ -98,8 +98,9 @@ export default function ChatScreen() {
       link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("[download] generateChatScreenshot failed:", err);
+      alert("Screenshot failed: " + String(err));
     }
     setDownloading(false);
   }
