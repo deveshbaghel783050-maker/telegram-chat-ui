@@ -16,7 +16,7 @@ import ChatInput from "@/components/ChatInput";
 import MessageBubble from "@/components/MessageBubble";
 import { Message, useProfile } from "@/context/ProfileContext";
 import PatternSvg from "../assets/images/pattern.svg";
-import { captureDomScreenshot } from "@/utils/generateScreenshot";
+import { generateChatScreenshot } from "@/utils/generateScreenshot";
 
 const AUTO_REPLIES: [string, string[]][] = [
   ["hi",      ["Hello bhai! 👋", "Haan bol kya scene", "Hi hi!"]],
@@ -84,26 +84,16 @@ export default function ChatScreen() {
     if (Platform.OS !== "web") return;
     setDownloading(true);
     try {
-      // 1. Scroll to bottom so latest messages are fully visible
-      flatListRef.current?.scrollToEnd({ animated: false });
-      // Wait for scroll + layout to settle
-      await new Promise<void>((r) => setTimeout(r, 350));
-
-      // 2. Hide the download button so it doesn't appear in the screenshot
-      const dlBtn = document.getElementById("chat-download-btn");
-      if (dlBtn) dlBtn.style.visibility = "hidden";
-
-      const rootEl    = document.getElementById("chat-root");
-      const patternEl = document.getElementById("chat-pattern");
-      let dataUrl = "";
-      try {
-        if (rootEl) dataUrl = await captureDomScreenshot(rootEl, patternEl);
-      } finally {
-        // Restore download button
-        if (dlBtn) dlBtn.style.visibility = "";
-      }
-
-      if (!dataUrl) return;
+      // Use generateChatScreenshot — same proven approach as automation.
+      // It builds the chat HTML off-screen, composites green bg + pattern PNG +
+      // chat UI in 3 steps. Pattern always shows correctly this way.
+      const user = {
+        name:        theirName,
+        username:    theirUsername,
+        phone:       theirPhone,
+        avatarColor: "#3390ec",   // default Telegram blue
+      };
+      const dataUrl = await generateChatScreenshot(user, messages, myName);
       const link = document.createElement("a");
       link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
