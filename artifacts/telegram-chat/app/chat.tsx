@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+// @ts-ignore
+import html2canvas from "html2canvas";
 
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
@@ -84,7 +86,28 @@ export default function ChatScreen() {
   const { messages, addMessage, theirName } = useProfile();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  async function handleDownload() {
+    if (Platform.OS !== "web") return;
+    setCapturing(true);
+    await new Promise((r) => setTimeout(r, 150));
+    try {
+      const canvas = await html2canvas(document.body, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: null,
+      });
+      const link = document.createElement("a");
+      link.download = `chat-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (e) {
+      // silent
+    }
+    setCapturing(false);
+  }
 
   function scrollToEnd(animated = true) {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated }), 80);
@@ -166,6 +189,13 @@ export default function ChatScreen() {
 
         <ChatInput onSend={handleSend} />
       </KeyboardAvoidingView>
+
+      {/* Floating Download Button — hidden during capture */}
+      {Platform.OS === "web" && !capturing && (
+        <Pressable style={styles.downloadBtn} onPress={handleDownload}>
+          <Ionicons name="download-outline" size={22} color="#fff" />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -192,4 +222,20 @@ const styles = StyleSheet.create({
   },
   typingBar: { paddingHorizontal: 14, paddingBottom: 2 },
   typingText: { fontSize: 12, color: "rgba(255,255,255,0.9)", fontFamily: "Inter_400Regular", fontStyle: "italic" },
+  downloadBtn: {
+    position: "absolute",
+    left: 16,
+    bottom: 90,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#3390ec",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 6,
+  },
 });

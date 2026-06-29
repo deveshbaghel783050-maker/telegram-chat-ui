@@ -9,7 +9,7 @@ import { useProfile } from "@/context/ProfileContext";
 
 export default function ChatHeader() {
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === "web" ? 44 : insets.top;
+  const topPad = Platform.OS === "web" ? 8 : insets.top;
   const { theirName, theirAvatarUri, clearMessages } = useProfile();
 
   const initial = theirName.charAt(0).toUpperCase();
