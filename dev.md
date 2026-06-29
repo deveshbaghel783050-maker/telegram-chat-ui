@@ -137,10 +137,17 @@ Pattern SVG is fetched from `/pattern.svg` (served as static file). `web/pattern
 - **Problem**: In automation HTML, mic blue circle was inside input pill
 - **Fix**: Moved mic circle outside the pill as separate element (real Telegram layout)
 
-### 6. Pattern not showing in automation screenshots
-- **Problem**: `html2canvas` does NOT render inline SVG reliably — pattern was blank
-- **Fix**: Convert SVG to `data:image/svg+xml` data URL and use `<img>` tag instead of inline SVG
-- **Rule**: Never use inline SVG with html2canvas — always use data URL in `<img>` tag
+### 6. Pattern not showing in automation screenshots (multiple attempts)
+- **Problem**: `html2canvas` does NOT render SVGs reliably in ANY form — inline SVG blank, data URL SVG blank, img with SVG src blank
+- **Final fix**: Pre-render SVG → real PNG via canvas API first, then pass PNG data URL to html2canvas
+  ```js
+  // renderPatternToPng(W, H):
+  const blob = new Blob([styledSvg], { type: "image/svg+xml" });
+  const blobUrl = URL.createObjectURL(blob);
+  img.onload = () => { ctx.drawImage(img, 0, 0, W, H); resolve(canvas.toDataURL("image/png")); }
+  img.src = blobUrl;
+  ```
+- **Rule**: NEVER try SVG with html2canvas. Always pre-render to PNG canvas first.
 
 ### 7. Last opponent message cut off at bottom in automation
 - **Problem**: Messages area used `justify-content:flex-start` — messages filled from top, overflow cut at bottom (visible as half-message)

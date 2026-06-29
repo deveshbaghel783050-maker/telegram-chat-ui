@@ -238,47 +238,61 @@ function padMessages(messages: Message[], minCount: number): Message[] {
   return padded;
 }
 
-// ─── Pre-load pattern SVG text for inline injection (most reliable for html2canvas) ──
-async function loadPatternSvgText(): Promise<string | null> {
+// ─── Render pattern SVG → real PNG canvas data URL ────────────────────────────
+// html2canvas CANNOT render SVGs reliably (inline, data URL, or img tag).
+// Only approach that works: draw SVG onto a real canvas first, export as PNG.
+async function renderPatternToPng(targetW: number, targetH: number): Promise<string | null> {
   try {
     const res = await fetch("/pattern.svg");
     if (!res.ok) return null;
-    const text = await res.text();
-    // Inject width/height/preserveAspectRatio so it fills the container like chat.tsx does:
-    // <PatternSvg width="100%" height="100%" viewBox="0 0 1440 2960" preserveAspectRatio="xMidYMid slice" />
-    return text.replace(
-      /<svg([^>]*)>/,
-      (_, attrs) => {
-        // Remove existing width/height/preserveAspectRatio attrs, then add correct ones
+    const rawSvg = await res.text();
+
+    // Inject fill + correct size attrs
+    const styledSvg = rawSvg
+      .replace(/<svg([^>]*)>/, (_, attrs) => {
         const cleaned = attrs
           .replace(/\s+width="[^"]*"/g, "")
           .replace(/\s+height="[^"]*"/g, "")
-          .replace(/\s+preserveAspectRatio="[^"]*"/g, "")
           .replace(/\s+x="[^"]*"/g, "")
-          .replace(/\s+y="[^"]*"/g, "");
-        return `<svg${cleaned} width="100%" height="100%" preserveAspectRatio="xMidYMid slice">`;
-      },
-    );
+          .replace(/\s+y="[^"]*"/g, "")
+          .replace(/\s+preserveAspectRatio="[^"]*"/g, "");
+        return `<svg${cleaned} width="${targetW}" height="${targetH}" preserveAspectRatio="xMidYMid slice" fill="#559e4e">`;
+      });
+
+    const blob = new Blob([styledSvg], { type: "image/svg+xml" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    return await new Promise<string | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width  = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { URL.revokeObjectURL(blobUrl); resolve(null); return; }
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        URL.revokeObjectURL(blobUrl);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+      img.src = blobUrl;
+    });
   } catch {
     return null;
   }
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
-function buildChatHtml(user: RandomUser, messages: Message[], patternSvgText: string | null): string {
-  const msgAreaTop    = HEADER_H;          // No status bar — header starts at top:0
+function buildChatHtml(user: RandomUser, messages: Message[], patternPngUrl: string | null): string {
+  const msgAreaTop    = HEADER_H;
   const msgAreaBottom = INPUT_H + NAV_H;
 
   const filled      = padMessages(messages, 14);
   const bubblesHtml = filled.map(buildBubble).join("");
 
-  // Use SVG as data URL in <img> tag — html2canvas renders img tags reliably, not inline SVG
-  const patternWithFill = patternSvgText
-    ? patternSvgText.replace(/<svg([^>]*)>/, (_, attrs) => `<svg${attrs} fill="#559e4e">`)
-    : null;
-
-  const patternHtml = patternWithFill
-    ? `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(patternWithFill)}"
+  // patternPngUrl is a real PNG data URL — html2canvas renders this perfectly
+  const patternHtml = patternPngUrl
+    ? `<img src="${patternPngUrl}"
            style="position:absolute;inset:0;width:100%;height:100%;opacity:0.55;object-fit:cover;pointer-events:none;" />`
     : "";
 
@@ -286,13 +300,13 @@ function buildChatHtml(user: RandomUser, messages: Message[], patternSvgText: st
     <!-- Solid green background matching chat.tsx (#7ab870) -->
     <div style="position:absolute;inset:0;background:#7ab870;"></div>
 
-    <!-- Pattern overlay — img data URL (html2canvas renders this reliably) -->
+    <!-- Pattern overlay — real PNG rendered from SVG, html2canvas handles PNG perfectly -->
     ${patternHtml}
 
-    <!-- Header — starts at top:0, no status bar gap -->
+    <!-- Header -->
     ${buildHeader(user)}
 
-    <!-- Messages area — justify flex-end so messages anchor at bottom, overflow hidden at top -->
+    <!-- Messages area — flex-end so messages anchor at bottom, overflow hidden at top -->
     <div style="position:absolute;top:${msgAreaTop}px;left:0;right:0;bottom:${msgAreaBottom}px;
                 display:flex;flex-direction:column;justify-content:flex-end;padding:8px 0 4px;
                 overflow:hidden;box-sizing:border-box;">
@@ -313,8 +327,8 @@ export async function generateChatScreenshot(
   messages: Message[],
   _myName: string,
 ): Promise<string> {
-  // Fetch pattern SVG text for inline injection (matches chat.tsx exactly, no CORS issues)
-  const patternSvgText = await loadPatternSvgText();
+  // Pre-render SVG pattern to a real PNG — html2canvas handles PNG perfectly, not SVG
+  const patternPngUrl = await renderPatternToPng(W, H);
 
   const container = document.createElement("div");
   container.style.cssText = [
@@ -328,7 +342,7 @@ export async function generateChatScreenshot(
     `font-family:'Inter_400Regular','Inter',-apple-system,sans-serif`,
   ].join(";");
 
-  container.innerHTML = buildChatHtml(user, messages, patternSvgText);
+  container.innerHTML = buildChatHtml(user, messages, patternPngUrl);
   document.body.appendChild(container);
 
   // Let fonts settle
