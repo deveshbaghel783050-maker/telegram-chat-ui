@@ -384,7 +384,10 @@ export async function generateChatScreenshot(
     `font-family:'Inter_400Regular','Inter',-apple-system,sans-serif`,
   ].join(";");
 
-  container.innerHTML = buildChatHtml(user, messages, null);
+  // Pass PATTERN_DATA_URL directly so html2canvas renders green bg + pattern + chat in one shot.
+  // Previously pattern was composited separately AFTER html2canvas, but the solid green
+  // chat canvas was drawn on top and covered the pattern completely.
+  container.innerHTML = buildChatHtml(user, messages, PATTERN_DATA_URL);
   document.body.appendChild(container);
 
   await document.fonts.ready;
@@ -396,37 +399,14 @@ export async function generateChatScreenshot(
       width:  W,
       height: H,
       scale:  SCALE,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#7ab870",
-      logging: false,
+      useCORS:         true,
+      allowTaint:      true,
+      backgroundColor: null,   // HTML already has green bg div + pattern img
+      logging:         false,
     });
   } finally {
     if (container.parentNode) document.body.removeChild(container);
   }
 
-  // Step 2: Render SVG pattern to its own canvas (completely separate from html2canvas)
-  const patternCanvas = await renderPatternToCanvas(W * SCALE, H * SCALE);
-
-  // Step 3: Composite — green bg + pattern (opacity 0.55) + chat UI on top
-  const final = document.createElement("canvas");
-  final.width  = W * SCALE;
-  final.height = H * SCALE;
-  const ctx = final.getContext("2d")!;
-
-  // Green background
-  ctx.fillStyle = "#7ab870";
-  ctx.fillRect(0, 0, final.width, final.height);
-
-  // Pattern at 0.55 opacity (if rendered successfully)
-  if (patternCanvas) {
-    ctx.globalAlpha = 0.55;
-    ctx.drawImage(patternCanvas, 0, 0, final.width, final.height);
-    ctx.globalAlpha = 1.0;
-  }
-
-  // Chat UI (messages, header, bubbles) on top — solid
-  ctx.drawImage(chatCanvas, 0, 0);
-
-  return final.toDataURL("image/jpeg", 0.95);
+  return chatCanvas.toDataURL("image/jpeg", 0.95);
 }
