@@ -85,11 +85,16 @@ export default function ChatScreen() {
     if (Platform.OS !== "web") return;
     setDownloading(true);
     try {
-      const user = getRandomUser();
-      const msgs = getRandomConversation(user);
-      const dataUrl = await generateChatScreenshot(user, msgs, myName);
+      // Use exactly what's on screen — current profile + current messages
+      const user = {
+        name: theirName,
+        username: theirUsername,
+        phone: theirPhone,
+        avatarColor: "#e17055",
+      };
+      const dataUrl = await generateChatScreenshot(user, messages, myName);
       const link = document.createElement("a");
-      link.download = `telegram-${user.name.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
+      link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
     } catch {
