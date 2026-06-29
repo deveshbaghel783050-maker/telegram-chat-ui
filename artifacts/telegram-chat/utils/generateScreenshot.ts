@@ -238,31 +238,29 @@ function padMessages(messages: Message[], minCount: number): Message[] {
   return padded;
 }
 
-// ─── Render pattern SVG → real PNG canvas data URL ────────────────────────────
-// html2canvas CANNOT render SVGs reliably (inline, data URL, or img tag).
-// Only approach that works: draw SVG onto a real canvas first, export as PNG.
-async function renderPatternToPng(targetW: number, targetH: number): Promise<string | null> {
+// ─── Render pattern SVG → HTMLCanvasElement ───────────────────────────────────
+// html2canvas CANNOT render SVGs. Draw SVG onto a real canvas separately,
+// then composite the canvas onto the final output after html2canvas is done.
+async function renderPatternToCanvas(targetW: number, targetH: number): Promise<HTMLCanvasElement | null> {
   try {
     const res = await fetch("/pattern.svg");
     if (!res.ok) return null;
     const rawSvg = await res.text();
 
-    // Inject fill + correct size attrs
-    const styledSvg = rawSvg
-      .replace(/<svg([^>]*)>/, (_, attrs) => {
-        const cleaned = attrs
-          .replace(/\s+width="[^"]*"/g, "")
-          .replace(/\s+height="[^"]*"/g, "")
-          .replace(/\s+x="[^"]*"/g, "")
-          .replace(/\s+y="[^"]*"/g, "")
-          .replace(/\s+preserveAspectRatio="[^"]*"/g, "");
-        return `<svg${cleaned} width="${targetW}" height="${targetH}" preserveAspectRatio="xMidYMid slice" fill="#559e4e">`;
-      });
+    const styledSvg = rawSvg.replace(/<svg([^>]*)>/, (_, attrs) => {
+      const cleaned = attrs
+        .replace(/\s+width="[^"]*"/g, "")
+        .replace(/\s+height="[^"]*"/g, "")
+        .replace(/\s+x="[^"]*"/g, "")
+        .replace(/\s+y="[^"]*"/g, "")
+        .replace(/\s+preserveAspectRatio="[^"]*"/g, "");
+      return `<svg${cleaned} width="${targetW}" height="${targetH}" preserveAspectRatio="xMidYMid slice" fill="#559e4e">`;
+    });
 
     const blob = new Blob([styledSvg], { type: "image/svg+xml" });
     const blobUrl = URL.createObjectURL(blob);
 
-    return await new Promise<string | null>((resolve) => {
+    return await new Promise<HTMLCanvasElement | null>((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -272,7 +270,7 @@ async function renderPatternToPng(targetW: number, targetH: number): Promise<str
         if (!ctx) { URL.revokeObjectURL(blobUrl); resolve(null); return; }
         ctx.drawImage(img, 0, 0, targetW, targetH);
         URL.revokeObjectURL(blobUrl);
-        resolve(canvas.toDataURL("image/png"));
+        resolve(canvas);
       };
       img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
       img.src = blobUrl;
@@ -327,9 +325,9 @@ export async function generateChatScreenshot(
   messages: Message[],
   _myName: string,
 ): Promise<string> {
-  // Pre-render SVG pattern to a real PNG — html2canvas handles PNG perfectly, not SVG
-  const patternPngUrl = await renderPatternToPng(W, H);
+  const SCALE = 2;
 
+  // Step 1: Render the chat UI (NO pattern — pure HTML/CSS only)
   const container = document.createElement("div");
   container.style.cssText = [
     `position:fixed`,
@@ -342,27 +340,49 @@ export async function generateChatScreenshot(
     `font-family:'Inter_400Regular','Inter',-apple-system,sans-serif`,
   ].join(";");
 
-  container.innerHTML = buildChatHtml(user, messages, patternPngUrl);
+  container.innerHTML = buildChatHtml(user, messages, null);
   document.body.appendChild(container);
 
-  // Let fonts settle
   await document.fonts.ready;
   await new Promise<void>((r) => setTimeout(r, 120));
 
+  let chatCanvas: HTMLCanvasElement;
   try {
-    const canvas = await html2canvas(container, {
+    chatCanvas = await html2canvas(container, {
       width:  W,
       height: H,
-      scale:  2,
+      scale:  SCALE,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: null,
+      backgroundColor: "#7ab870",
       logging: false,
     });
-    return canvas.toDataURL("image/png");
   } finally {
-    if (container.parentNode) {
-      document.body.removeChild(container);
-    }
+    if (container.parentNode) document.body.removeChild(container);
   }
+
+  // Step 2: Render SVG pattern to its own canvas (completely separate from html2canvas)
+  const patternCanvas = await renderPatternToCanvas(W * SCALE, H * SCALE);
+
+  // Step 3: Composite — green bg + pattern (opacity 0.55) + chat UI on top
+  const final = document.createElement("canvas");
+  final.width  = W * SCALE;
+  final.height = H * SCALE;
+  const ctx = final.getContext("2d")!;
+
+  // Green background
+  ctx.fillStyle = "#7ab870";
+  ctx.fillRect(0, 0, final.width, final.height);
+
+  // Pattern at 0.55 opacity (if rendered successfully)
+  if (patternCanvas) {
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(patternCanvas, 0, 0, final.width, final.height);
+    ctx.globalAlpha = 1.0;
+  }
+
+  // Chat UI (messages, header, bubbles) on top — solid
+  ctx.drawImage(chatCanvas, 0, 0);
+
+  return final.toDataURL("image/png");
 }
