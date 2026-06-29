@@ -6,7 +6,7 @@ import { RandomUser } from "./randomData";
 const W = 390;
 const H = 844;
 
-const STATUS_H = 28;
+const STATUS_H = 0;   // No status bar in automation screenshots
 const HEADER_H = 72;
 const INPUT_H  = 62;
 const NAV_H    = 32;
@@ -237,43 +237,53 @@ function padMessages(messages: Message[], minCount: number): Message[] {
   return padded;
 }
 
-// ─── Pre-load pattern as data URL (fixes html2canvas CORS issue) ──────────────
-async function loadPatternDataUrl(): Promise<string | null> {
+// ─── Pre-load pattern SVG text for inline injection (most reliable for html2canvas) ──
+async function loadPatternSvgText(): Promise<string | null> {
   try {
     const res = await fetch("/pattern.svg");
     if (!res.ok) return null;
     const text = await res.text();
-    const b64  = btoa(unescape(encodeURIComponent(text)));
-    return `data:image/svg+xml;base64,${b64}`;
+    // Inject width/height/preserveAspectRatio so it fills the container like chat.tsx does:
+    // <PatternSvg width="100%" height="100%" viewBox="0 0 1440 2960" preserveAspectRatio="xMidYMid slice" />
+    return text.replace(
+      /<svg([^>]*)>/,
+      (_, attrs) => {
+        // Remove existing width/height/preserveAspectRatio attrs, then add correct ones
+        const cleaned = attrs
+          .replace(/\s+width="[^"]*"/g, "")
+          .replace(/\s+height="[^"]*"/g, "")
+          .replace(/\s+preserveAspectRatio="[^"]*"/g, "")
+          .replace(/\s+x="[^"]*"/g, "")
+          .replace(/\s+y="[^"]*"/g, "");
+        return `<svg${cleaned} width="100%" height="100%" preserveAspectRatio="xMidYMid slice">`;
+      },
+    );
   } catch {
     return null;
   }
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
-function buildChatHtml(user: RandomUser, messages: Message[], patternDataUrl: string | null): string {
-  const msgAreaTop    = STATUS_H + HEADER_H;
+function buildChatHtml(user: RandomUser, messages: Message[], patternSvgText: string | null): string {
+  const msgAreaTop    = HEADER_H;          // No status bar — header starts at top:0
   const msgAreaBottom = INPUT_H + NAV_H;
 
   const filled      = padMessages(messages, 14);
   const bubblesHtml = filled.map(buildBubble).join("");
 
-  const patternHtml = patternDataUrl
-    ? `<img src="${patternDataUrl}"
-         style="position:absolute;inset:0;width:100%;height:100%;opacity:0.18;object-fit:cover;pointer-events:none;" />`
+  // Inline SVG exactly like chat.tsx's <PatternSvg> — most reliable for html2canvas
+  const patternHtml = patternSvgText
+    ? `<div style="position:absolute;inset:0;opacity:0.18;pointer-events:none;overflow:hidden;">${patternSvgText}</div>`
     : "";
 
   return `
     <!-- Green gradient background -->
     <div style="position:absolute;inset:0;background:linear-gradient(180deg,#b2d4a8 0%,#6aab6a 50%,#4a8a4a 100%);"></div>
 
-    <!-- Pattern overlay -->
+    <!-- Pattern overlay (inline SVG, no CORS, matches chat.tsx) -->
     ${patternHtml}
 
-    <!-- Status bar -->
-    ${buildStatusBar(user.phone)}
-
-    <!-- Header -->
+    <!-- Header — starts at top:0, no status bar gap -->
     ${buildHeader(user)}
 
     <!-- Messages area -->
@@ -297,8 +307,8 @@ export async function generateChatScreenshot(
   messages: Message[],
   _myName: string,
 ): Promise<string> {
-  // Pre-fetch pattern as data URL so html2canvas can render it
-  const patternDataUrl = await loadPatternDataUrl();
+  // Fetch pattern SVG text for inline injection (matches chat.tsx exactly, no CORS issues)
+  const patternSvgText = await loadPatternSvgText();
 
   const container = document.createElement("div");
   container.style.cssText = [
@@ -312,7 +322,7 @@ export async function generateChatScreenshot(
     `font-family:'Inter_400Regular','Inter',-apple-system,sans-serif`,
   ].join(";");
 
-  container.innerHTML = buildChatHtml(user, messages, patternDataUrl);
+  container.innerHTML = buildChatHtml(user, messages, patternSvgText);
   document.body.appendChild(container);
 
   // Let fonts settle
