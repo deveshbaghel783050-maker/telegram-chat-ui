@@ -88,28 +88,6 @@ function buildStatusBar(phone: string): string {
     <div style="position:absolute;top:0;left:0;right:0;height:${STATUS_H}px;display:flex;align-items:center;padding:0 14px;box-sizing:border-box;">
       <span style="color:#fff;font-size:13px;font-weight:700;font-family:'Inter_700Bold','Inter',sans-serif;min-width:38px;">${time}</span>
       <span style="flex:1;color:rgba(255,255,255,0.45);font-size:9px;text-align:center;font-family:'Inter_400Regular','Inter',sans-serif;">${phone}</span>
-      <div style="display:flex;align-items:center;gap:5px;">
-        <!-- wifi arcs (3 white arcs) -->
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-          <path d="M1 9 Q8 2 15 9" stroke="rgba(255,255,255,0.4)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-          <path d="M3.5 11 Q8 5.5 12.5 11" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-          <path d="M6 13 Q8 9.5 10 13" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-          <circle cx="8" cy="15" r="1.5" fill="#fff"/>
-        </svg>
-        <!-- signal bars -->
-        <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
-          <rect x="0"  y="8"  width="3" height="4" rx="0.5" fill="rgba(255,255,255,0.4)"/>
-          <rect x="5"  y="6"  width="3" height="6" rx="0.5" fill="rgba(255,255,255,0.7)"/>
-          <rect x="10" y="3"  width="3" height="9" rx="0.5" fill="#fff"/>
-          <rect x="15" y="0"  width="3" height="12" rx="0.5" fill="#fff"/>
-        </svg>
-        <!-- battery -->
-        <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
-          <rect x="0.5" y="1" width="23" height="12" rx="2" stroke="#fff" stroke-width="1.2"/>
-          <rect x="2" y="2.5" width="19" height="9" rx="1" fill="#fff"/>
-          <path d="M25 4.5 Q27.5 5.5 27.5 7 Q27.5 8.5 25 9.5" stroke="#fff" stroke-width="1.2" fill="none"/>
-        </svg>
-      </div>
     </div>`;
 }
 
@@ -133,9 +111,8 @@ function buildHeader(user: RandomUser): string {
         </div>
         <!-- Name + status -->
         <div style="flex:1;overflow:hidden;">
-          <div style="display:flex;align-items:center;gap:3px;">
+          <div style="display:flex;align-items:center;">
             <span style="font-size:15px;font-weight:700;color:#0a0a0a;font-family:'Inter_700Bold','Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</span>
-            ${SVG_VOLUME_OFF}
           </div>
           <div style="font-size:12px;color:#777;font-family:'Inter_400Regular','Inter',sans-serif;margin-top:1px;">${lastSeen}</div>
         </div>
@@ -257,7 +234,7 @@ function buildChatHtml(user: RandomUser, messages: Message[]): string {
 
     <!-- Messages area -->
     <div style="position:absolute;top:${msgAreaTop}px;left:0;right:0;bottom:${msgAreaBottom}px;
-                display:flex;flex-direction:column;justify-content:flex-end;padding:8px 0 4px;
+                display:flex;flex-direction:column;justify-content:flex-start;padding:8px 0 4px;
                 overflow:hidden;box-sizing:border-box;">
       ${bubblesHtml}
     </div>
