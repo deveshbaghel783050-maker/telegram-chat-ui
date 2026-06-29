@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+
 import React, { useRef, useState } from "react";
 import {
   FlatList,
@@ -165,31 +165,24 @@ export default function ChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
-        <View style={styles.flex}>
-          <FlatList
-            ref={flatListRef}
-            data={listData}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              if ("_typing" in item) return <TypingBubble />;
-              return <MessageBubble message={item as Message} />;
-            }}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            keyboardDismissMode="interactive"
-            keyboardShouldPersistTaps="handled"
-            onScroll={handleScroll}
-            scrollEventThrottle={100}
-            onContentSizeChange={() => scrollToEnd(false)}
-            onLayout={() => scrollToEnd(false)}
-          />
+        <FlatList
+          ref={flatListRef}
+          data={listData}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            if ("_typing" in item) return <TypingBubble />;
+            return <MessageBubble message={item as Message} />;
+          }}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          onScroll={handleScroll}
+          scrollEventThrottle={100}
+          onContentSizeChange={() => scrollToEnd(false)}
+          onLayout={() => scrollToEnd(false)}
+        />
 
-          {/* Fade gradient at bottom so messages blend into input bar */}
-          <LinearGradient
-            colors={["transparent", "rgba(122,158,114,0.92)"]}
-            style={styles.bottomFade}
-          />
-        </View>
 
         {showScrollBtn && (
           <Pressable style={styles.scrollBtn} onPress={() => flatListRef.current?.scrollToEnd({ animated: true })}>
@@ -235,14 +228,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
-  },
-  bottomFade: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 56,
-    pointerEvents: "none",
   },
   typingBar: { paddingHorizontal: 14, paddingBottom: 2 },
   typingText: { fontSize: 12, color: "rgba(255,255,255,0.9)", fontFamily: "Inter_400Regular", fontStyle: "italic" },
