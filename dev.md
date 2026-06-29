@@ -69,12 +69,17 @@ Same look replicated in HTML/CSS for `html2canvas`:
 // Background
 <div style="position:absolute;inset:0;background:#7ab870;"></div>
 
-// Pattern — inject fill="#559e4e" into SVG tag, opacity:0.55
-patternSvgText.replace(/<svg([^>]*)>/, (_, attrs) => `<svg${attrs} fill="#559e4e">`)
-<div style="opacity:0.55;..."> inlined SVG </div>
+// Pattern — inject fill="#559e4e", convert to data URL, render as <img>
+// IMPORTANT: html2canvas does NOT render inline SVG reliably.
+// Must use data URL in <img> tag — this is the only approach that works.
+const patternWithFill = svgText.replace(/<svg([^>]*)>/, (_, a) => `<svg${a} fill="#559e4e">`);
+const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(patternWithFill)}`;
+<img src={dataUrl} style="opacity:0.55;object-fit:cover;..." />
 ```
 
 Pattern SVG is fetched from `/pattern.svg` (served as static file). `web/pattern.svg` is the web-served copy.
+
+**Critical**: Messages area must use `justify-content:flex-end` so messages anchor at the bottom. If `flex-start` is used, overflow messages get cut at the bottom (visible as half-message). With `flex-end`, overflow is hidden at the top (not visible).
 
 ---
 
@@ -131,6 +136,15 @@ Pattern SVG is fetched from `/pattern.svg` (served as static file). `web/pattern
 ### 5. Mic icon looked different in automation
 - **Problem**: In automation HTML, mic blue circle was inside input pill
 - **Fix**: Moved mic circle outside the pill as separate element (real Telegram layout)
+
+### 6. Pattern not showing in automation screenshots
+- **Problem**: `html2canvas` does NOT render inline SVG reliably — pattern was blank
+- **Fix**: Convert SVG to `data:image/svg+xml` data URL and use `<img>` tag instead of inline SVG
+- **Rule**: Never use inline SVG with html2canvas — always use data URL in `<img>` tag
+
+### 7. Last opponent message cut off at bottom in automation
+- **Problem**: Messages area used `justify-content:flex-start` — messages filled from top, overflow cut at bottom (visible as half-message)
+- **Fix**: Changed to `justify-content:flex-end` — messages anchor at bottom, any overflow is hidden at top (not visible)
 
 ---
 

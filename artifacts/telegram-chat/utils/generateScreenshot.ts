@@ -272,28 +272,29 @@ function buildChatHtml(user: RandomUser, messages: Message[], patternSvgText: st
   const filled      = padMessages(messages, 14);
   const bubblesHtml = filled.map(buildBubble).join("");
 
-  // Inline SVG exactly like chat.tsx's <PatternSvg> with fill="#559e4e" at opacity 0.55
+  // Use SVG as data URL in <img> tag — html2canvas renders img tags reliably, not inline SVG
   const patternWithFill = patternSvgText
     ? patternSvgText.replace(/<svg([^>]*)>/, (_, attrs) => `<svg${attrs} fill="#559e4e">`)
     : null;
 
   const patternHtml = patternWithFill
-    ? `<div style="position:absolute;inset:0;opacity:0.55;pointer-events:none;overflow:hidden;">${patternWithFill}</div>`
+    ? `<img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(patternWithFill)}"
+           style="position:absolute;inset:0;width:100%;height:100%;opacity:0.55;object-fit:cover;pointer-events:none;" />`
     : "";
 
   return `
     <!-- Solid green background matching chat.tsx (#7ab870) -->
     <div style="position:absolute;inset:0;background:#7ab870;"></div>
 
-    <!-- Pattern overlay (inline SVG with darker green fill, matches chat.tsx) -->
+    <!-- Pattern overlay — img data URL (html2canvas renders this reliably) -->
     ${patternHtml}
 
     <!-- Header — starts at top:0, no status bar gap -->
     ${buildHeader(user)}
 
-    <!-- Messages area -->
+    <!-- Messages area — justify flex-end so messages anchor at bottom, overflow hidden at top -->
     <div style="position:absolute;top:${msgAreaTop}px;left:0;right:0;bottom:${msgAreaBottom}px;
-                display:flex;flex-direction:column;justify-content:flex-start;padding:8px 0 4px;
+                display:flex;flex-direction:column;justify-content:flex-end;padding:8px 0 4px;
                 overflow:hidden;box-sizing:border-box;">
       ${bubblesHtml}
     </div>
