@@ -95,7 +95,7 @@ export default function ChatScreen() {
       };
       const dataUrl = await generateChatScreenshot(user, messages, myName);
       const link = document.createElement("a");
-      link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.jpg`;
+      link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {

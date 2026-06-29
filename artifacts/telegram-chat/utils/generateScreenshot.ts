@@ -360,7 +360,7 @@ export async function captureDomScreenshot(
   // Layer 3: chat UI (header + bubbles + input — transparent bg, pattern shows through)
   ctx.drawImage(chatCanvas, 0, 0);
 
-  return final.toDataURL("image/jpeg", 0.95);
+  return final.toDataURL("image/png");
 }
 
 // ─── Main export (used by automation / bulk screenshots) ──────────────────────
@@ -408,5 +408,5 @@ export async function generateChatScreenshot(
     if (container.parentNode) document.body.removeChild(container);
   }
 
-  return chatCanvas.toDataURL("image/jpeg", 0.95);
+  return chatCanvas.toDataURL("image/png");
 }
