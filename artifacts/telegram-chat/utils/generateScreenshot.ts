@@ -1,4 +1,6 @@
 import { Message } from "@/context/ProfileContext";
+// @ts-ignore
+import html2canvas from "html2canvas";
 import { RandomUser } from "./randomData";
 
 const W = 390;
@@ -8,569 +10,305 @@ const STATUS_H = 28;
 const HEADER_H = 72;
 const INPUT_H  = 62;
 const NAV_H    = 32;
-const CHAT_TOP = STATUS_H + HEADER_H;
-const CHAT_BOT = H - INPUT_H - NAV_H;
 
-const SENT_BG   = "#c8efaa";
-const RECV_BG   = "#ffffff";
-const SENT_TIME = "#6aaa55";
-const RECV_TIME = "#aaaaaa";
-
-let _patternCache: HTMLImageElement | null = null;
-function loadPattern(): Promise<HTMLImageElement | null> {
-  if (_patternCache) return Promise.resolve(_patternCache);
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload  = () => { _patternCache = img; resolve(img); };
-    img.onerror = () => resolve(null);
-    img.src = "/pattern.svg";
-  });
+// ─── Time seed per user ───────────────────────────────────────────────────────
+const TIMES = ["5:55", "6:14", "7:45", "8:12", "9:03", "10:24", "11:07", "12:30"];
+function seedTime(phone: string): string {
+  const d = parseInt(phone.replace(/\D/g, "").slice(-2) || "0");
+  return TIMES[d % TIMES.length];
 }
 
-function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  const R = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + R, y);
-  ctx.lineTo(x + w - R, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + R);
-  ctx.lineTo(x + w, y + h - R);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - R, y + h);
-  ctx.lineTo(x + R, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - R);
-  ctx.lineTo(x, y + R);
-  ctx.quadraticCurveTo(x, y, x + R, y);
-  ctx.closePath();
+const LAST_SEEN = [
+  "last seen recently",
+  "last seen 2 hours ago",
+  "last seen today at 1:30 PM",
+  "last seen yesterday",
+  "last seen Jun 26 at 10:11 AM",
+];
+function seedLastSeen(phone: string): string {
+  const d = Math.abs(parseInt(phone.replace(/\D/g, "").slice(-2) || "0"));
+  return LAST_SEEN[d % LAST_SEEN.length];
 }
 
-function whitePill(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.save();
-  ctx.shadowColor   = "rgba(0,0,0,0.13)";
-  ctx.shadowBlur    = 8;
-  ctx.shadowOffsetY = 2;
-  ctx.fillStyle = "#ffffff";
-  rrect(ctx, x, y, w, h, r);
-  ctx.fill();
-  ctx.restore();
+// ─── Inline SVG icons (matching @expo/vector-icons used in /chat) ─────────────
+
+const SVG_ARROW_BACK = `<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M13.5 5L7.5 11L13.5 17" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="7.5" y1="11" x2="18.5" y2="11" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+</svg>`;
+
+const SVG_PHONE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.43 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.69a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+</svg>`;
+
+const SVG_THREE_DOTS = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#1a1a1a" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="5"  r="1.5"/>
+  <circle cx="12" cy="12" r="1.5"/>
+  <circle cx="12" cy="19" r="1.5"/>
+</svg>`;
+
+const SVG_VOLUME_OFF = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <line x1="23" y1="9" x2="17" y2="15" stroke="#e53935" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="17" y1="9" x2="23" y2="15" stroke="#e53935" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
+const SVG_SMILEY = `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="13" cy="13" r="11" stroke="#8a8a8a" stroke-width="1.7"/>
+  <circle cx="9.5" cy="10.5" r="1.4" fill="#8a8a8a"/>
+  <circle cx="16.5" cy="10.5" r="1.4" fill="#8a8a8a"/>
+  <path d="M8.5 15.5 Q13 19.5 17.5 15.5" stroke="#8a8a8a" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+</svg>`;
+
+const SVG_PAPERCLIP = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+</svg>`;
+
+const SVG_MIC = `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
+  <path d="M5 10a7 7 0 0 0 14 0" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="8" y1="23" x2="16" y2="23" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+</svg>`;
+
+const SVG_CHECK_DONE_READ = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M1 12l5 5L18 5" stroke="#3390ec" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7 12l5 5L23 5" stroke="#3390ec" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const SVG_CHECK_DONE_UNREAD = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M1 12l5 5L18 5" stroke="#8ab88a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7 12l5 5L23 5" stroke="#8ab88a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// ─── Status bar HTML ──────────────────────────────────────────────────────────
+function buildStatusBar(phone: string): string {
+  const time = seedTime(phone);
+  return `
+    <div style="position:absolute;top:0;left:0;right:0;height:${STATUS_H}px;display:flex;align-items:center;padding:0 14px;box-sizing:border-box;">
+      <span style="color:#fff;font-size:13px;font-weight:700;font-family:'Inter_700Bold','Inter',sans-serif;min-width:38px;">${time}</span>
+      <span style="flex:1;color:rgba(255,255,255,0.45);font-size:9px;text-align:center;font-family:'Inter_400Regular','Inter',sans-serif;">${phone}</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <!-- wifi arcs (3 white arcs) -->
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+          <path d="M1 9 Q8 2 15 9" stroke="rgba(255,255,255,0.4)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          <path d="M3.5 11 Q8 5.5 12.5 11" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          <path d="M6 13 Q8 9.5 10 13" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          <circle cx="8" cy="15" r="1.5" fill="#fff"/>
+        </svg>
+        <!-- signal bars -->
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
+          <rect x="0"  y="8"  width="3" height="4" rx="0.5" fill="rgba(255,255,255,0.4)"/>
+          <rect x="5"  y="6"  width="3" height="6" rx="0.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="10" y="3"  width="3" height="9" rx="0.5" fill="#fff"/>
+          <rect x="15" y="0"  width="3" height="12" rx="0.5" fill="#fff"/>
+        </svg>
+        <!-- battery -->
+        <svg width="28" height="14" viewBox="0 0 28 14" fill="none">
+          <rect x="0.5" y="1" width="23" height="12" rx="2" stroke="#fff" stroke-width="1.2"/>
+          <rect x="2" y="2.5" width="19" height="9" rx="1" fill="#fff"/>
+          <path d="M25 4.5 Q27.5 5.5 27.5 7 Q27.5 8.5 25 9.5" stroke="#fff" stroke-width="1.2" fill="none"/>
+        </svg>
+      </div>
+    </div>`;
 }
 
-function phone2seed(phone: string): string {
-  return phone.replace(/\D/g, "").slice(-2) || "0";
+// ─── Header HTML ──────────────────────────────────────────────────────────────
+function buildHeader(user: RandomUser): string {
+  const initial = user.name.charAt(0).toUpperCase();
+  const lastSeen = seedLastSeen(user.phone);
+  return `
+    <div style="position:absolute;top:${STATUS_H}px;left:0;right:0;height:${HEADER_H}px;display:flex;align-items:center;padding:0 10px;gap:8px;box-sizing:border-box;">
+
+      <!-- Back circle -->
+      <div style="width:48px;height:48px;border-radius:24px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.13);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        ${SVG_ARROW_BACK}
+      </div>
+
+      <!-- Center pill -->
+      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding:8px 14px 8px 8px;gap:10px;min-height:52px;box-shadow:0 1px 4px rgba(0,0,0,0.13);box-sizing:border-box;overflow:hidden;">
+        <!-- Avatar -->
+        <div style="width:36px;height:36px;border-radius:18px;background:${user.avatarColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:#fff;font-size:16px;font-weight:700;font-family:'Inter_700Bold','Inter',sans-serif;">${initial}</span>
+        </div>
+        <!-- Name + status -->
+        <div style="flex:1;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:3px;">
+            <span style="font-size:15px;font-weight:700;color:#0a0a0a;font-family:'Inter_700Bold','Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</span>
+            ${SVG_VOLUME_OFF}
+          </div>
+          <div style="font-size:12px;color:#777;font-family:'Inter_400Regular','Inter',sans-serif;margin-top:1px;">${lastSeen}</div>
+        </div>
+      </div>
+
+      <!-- Right pill -->
+      <div style="display:flex;align-items:center;background:#fff;border-radius:999px;padding:10px 6px;box-shadow:0 1px 4px rgba(0,0,0,0.13);">
+        <div style="padding:2px 8px;display:flex;align-items:center;">${SVG_PHONE}</div>
+        <div style="width:1px;height:18px;background:#e0e0e0;margin:0 2px;"></div>
+        <div style="padding:2px 8px;display:flex;align-items:center;">${SVG_THREE_DOTS}</div>
+      </div>
+
+    </div>`;
 }
 
-function darken(hex: string, amt: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.max(0, Math.min(255, (n >> 16) + amt));
-  const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + amt));
-  const b = Math.max(0, Math.min(255, (n & 0xff) + amt));
-  return `rgb(${r},${g},${b})`;
+// ─── Message bubble HTML ──────────────────────────────────────────────────────
+function buildBubble(msg: Message): string {
+  const sentBg   = "#dcf8c6";
+  const recvBg   = "#ffffff";
+  const bg       = msg.sent ? sentBg : recvBg;
+  const timeCol  = msg.sent ? "#6a9a6a" : "#999";
+  const br       = msg.sent
+    ? "border-radius:18px;border-bottom-right-radius:4px;"
+    : "border-radius:18px;border-bottom-left-radius:4px;";
+  const align    = msg.sent ? "flex-end" : "flex-start";
+  const tick     = msg.sent
+    ? (msg.read ? SVG_CHECK_DONE_READ : SVG_CHECK_DONE_UNREAD)
+    : "";
+
+  const textHtml = msg.text
+    ? `<div style="font-size:15px;line-height:20px;color:#0a0a0a;font-family:'Inter_400Regular','Inter',sans-serif;word-break:break-word;">${escHtml(msg.text)}</div>`
+    : "";
+
+  return `
+    <div style="display:flex;justify-content:${align};padding:1px 8px;box-sizing:border-box;">
+      <div style="max-width:82%;background:${bg};${br}padding:7px 10px 5px 10px;box-shadow:0 1px 2px rgba(0,0,0,0.08);box-sizing:border-box;">
+        ${textHtml}
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:2px;margin-top:2px;">
+          <span style="font-size:11px;color:${timeCol};font-family:'Inter_400Regular','Inter',sans-serif;">${escHtml(msg.time)}</span>
+          ${tick}
+        </div>
+      </div>
+    </div>`;
 }
 
-// ─── SVG path helper (renders actual icon SVG paths via Path2D) ───────────────
-
-function drawIconPath(
-  ctx: CanvasRenderingContext2D,
-  svgPath: string,
-  cx: number, cy: number,
-  displaySize: number,
-  viewBoxSize: number,
-  color: string,
-  mode: "fill" | "stroke" = "stroke",
-  strokeWidth = 2,
-) {
-  const scale = displaySize / viewBoxSize;
-  ctx.save();
-  ctx.translate(cx - displaySize / 2, cy - displaySize / 2);
-  ctx.scale(scale, scale);
-  const path = new Path2D(svgPath);
-  if (mode === "stroke") {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = strokeWidth / scale;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke(path);
-  } else {
-    ctx.fillStyle = color;
-    ctx.fill(path);
-  }
-  ctx.restore();
+// ─── Input bar HTML ───────────────────────────────────────────────────────────
+function buildInputBar(): string {
+  return `
+    <div style="position:absolute;bottom:${NAV_H}px;left:0;right:0;height:${INPUT_H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;">
+      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding-left:4px;padding-right:4px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);gap:0;">
+        <!-- Emoji button -->
+        <div style="padding:4px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          ${SVG_SMILEY}
+        </div>
+        <!-- Placeholder text -->
+        <div style="flex:1;font-size:16px;color:#b0b0b0;font-family:'Inter_400Regular','Inter',sans-serif;">Message</div>
+        <!-- Paperclip -->
+        <div style="padding:4px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          ${SVG_PAPERCLIP}
+        </div>
+        <!-- Blue mic circle -->
+        <div style="width:42px;height:42px;border-radius:21px;background:#3390ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(51,144,236,0.4);">
+          ${SVG_MIC}
+        </div>
+      </div>
+    </div>`;
 }
 
-// ─── Icon definitions matching the /chat screen exactly ──────────────────────
-
-// Ionicons "arrow-back"  (matches ChatHeader back button)
-function iconArrowBack(ctx: CanvasRenderingContext2D, cx: number, cy: number, _size: number, color: string) {
-  const S = 10;
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2.3;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.beginPath();
-  ctx.moveTo(cx + S * 0.55, cy - S * 0.65);
-  ctx.lineTo(cx - S * 0.35, cy);
-  ctx.lineTo(cx + S * 0.55, cy + S * 0.65);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx - S * 0.35, cy);
-  ctx.lineTo(cx + S * 0.9, cy);
-  ctx.stroke();
-  ctx.restore();
+// ─── Nav bar HTML ─────────────────────────────────────────────────────────────
+function buildNavBar(): string {
+  return `
+    <div style="position:absolute;bottom:0;left:0;right:0;height:${NAV_H}px;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:space-around;">
+      <!-- Squares (recent apps) -->
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="1" y="1" width="6" height="6" rx="1" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <rect x="11" y="1" width="6" height="6" rx="1" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <rect x="1" y="11" width="6" height="6" rx="1" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <rect x="11" y="11" width="6" height="6" rx="1" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+      </svg>
+      <!-- Home circle -->
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="7.5" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+      </svg>
+      <!-- Back chevron -->
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M11 4L6 9L11 14" stroke="rgba(255,255,255,0.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>`;
 }
 
-// Feather "phone"  (matches ChatHeader right pill phone button)
-// Feather icons viewBox: 24x24, stroke-based
-const FEATHER_PHONE =
-  "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.43 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.69a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z";
-
-function iconPhone(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
-  drawIconPath(ctx, FEATHER_PHONE, cx, cy, size, 24, color, "stroke", 1.8);
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function escHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Feather "more-vertical"  (matches ChatHeader right pill three-dot button)
-function iconThreeDots(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.save();
-  ctx.fillStyle = color;
-  [-7, 0, 7].forEach((dy) => {
-    ctx.beginPath();
-    ctx.arc(cx, cy + dy, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.restore();
-}
+// ─── Main builder ─────────────────────────────────────────────────────────────
+function buildChatHtml(user: RandomUser, messages: Message[]): string {
+  const msgAreaTop    = STATUS_H + HEADER_H;
+  const msgAreaBottom = INPUT_H + NAV_H;
 
-// MaterialIcons "volume-off"  (matches ChatHeader mute icon next to name)
-function iconMute(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.4;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const s = 5;
-  // speaker body
-  ctx.beginPath();
-  ctx.moveTo(cx - s * 1.1, cy - s * 0.5);
-  ctx.lineTo(cx - s * 0.3, cy - s * 0.5);
-  ctx.lineTo(cx + s * 0.5, cy - s * 1.1);
-  ctx.lineTo(cx + s * 0.5, cy + s * 1.1);
-  ctx.lineTo(cx - s * 0.3, cy + s * 0.5);
-  ctx.lineTo(cx - s * 1.1, cy + s * 0.5);
-  ctx.closePath();
-  ctx.stroke();
-  // X slash lines
-  ctx.strokeStyle = "#e53935";
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(cx + s * 0.85, cy - s * 0.6);
-  ctx.lineTo(cx + s * 1.7,  cy + s * 0.6);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx + s * 1.7,  cy - s * 0.6);
-  ctx.lineTo(cx + s * 0.85, cy + s * 0.6);
-  ctx.stroke();
-  ctx.restore();
-}
+  const bubblesHtml = messages
+    .slice(-12)
+    .map(buildBubble)
+    .join("");
 
-// Ionicons "happy-outline"  (matches ChatInput emoji button)
-function iconSmiley(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.7;
-  ctx.lineCap = "round";
-  // outer circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.stroke();
-  // left eye
-  ctx.beginPath();
-  ctx.arc(cx - r * 0.32, cy - r * 0.22, 1.4, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  // right eye
-  ctx.beginPath();
-  ctx.arc(cx + r * 0.32, cy - r * 0.22, 1.4, 0, Math.PI * 2);
-  ctx.fill();
-  // smile arc
-  ctx.beginPath();
-  ctx.arc(cx, cy + r * 0.08, r * 0.48, 0.15, Math.PI - 0.15);
-  ctx.stroke();
-  ctx.restore();
-}
+  return `
+    <!-- Green gradient background -->
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,#b2d4a8 0%,#6aab6a 50%,#4a8a4a 100%);"></div>
 
-// Feather "paperclip"  (matches ChatInput attach button)
-const FEATHER_PAPERCLIP =
-  "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48";
+    <!-- Pattern overlay -->
+    <img src="/pattern.svg" crossorigin="anonymous"
+      style="position:absolute;inset:0;width:100%;height:100%;opacity:0.18;object-fit:cover;pointer-events:none;" />
 
-function iconPaperclip(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  drawIconPath(ctx, FEATHER_PAPERCLIP, cx, cy, 22, 24, color, "stroke", 1.8);
-}
+    <!-- Status bar -->
+    ${buildStatusBar(user.phone)}
 
-// Ionicons "mic"  (matches ChatInput mic button)
-function iconMic(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.7;
-  ctx.lineCap = "round";
-  // mic capsule body
-  const mw = 4.5, mh = 8, mr = 2.5;
-  rrect(ctx, cx - mw / 2, cy - mh - 1, mw, mh, mr);
-  ctx.fill();
-  // outer arc (stand)
-  ctx.beginPath();
-  ctx.arc(cx, cy - 1, mw + 2.5, Math.PI, 0);
-  ctx.stroke();
-  // vertical stem
-  ctx.beginPath();
-  ctx.moveTo(cx, cy + mw + 1.5);
-  ctx.lineTo(cx, cy + mw + 4);
-  ctx.stroke();
-  // base line
-  ctx.beginPath();
-  ctx.moveTo(cx - 3.5, cy + mw + 4);
-  ctx.lineTo(cx + 3.5, cy + mw + 4);
-  ctx.stroke();
-  ctx.restore();
-}
+    <!-- Header -->
+    ${buildHeader(user)}
 
-// Android nav bar icons ───────────────────────────────────────────────────────
+    <!-- Messages area -->
+    <div style="position:absolute;top:${msgAreaTop}px;left:0;right:0;bottom:${msgAreaBottom}px;
+                display:flex;flex-direction:column;justify-content:flex-end;padding:8px 0 4px;
+                overflow:hidden;box-sizing:border-box;">
+      ${bubblesHtml}
+    </div>
 
-function iconNavSquares(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
-  const s = 4, gap = 2;
-  [[-s - gap / 2, -s - gap / 2], [gap / 2, -s - gap / 2], [-s - gap / 2, gap / 2], [gap / 2, gap / 2]].forEach(([dx, dy]) => {
-    ctx.strokeRect(cx + dx, cy + dy, s, s);
-  });
-  ctx.restore();
-}
+    <!-- Input bar -->
+    ${buildInputBar()}
 
-function iconNavBack(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.8;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const s = 6;
-  ctx.beginPath();
-  ctx.moveTo(cx + s, cy - s * 0.7);
-  ctx.lineTo(cx - s * 0.4, cy);
-  ctx.lineTo(cx + s, cy + s * 0.7);
-  ctx.stroke();
-  ctx.restore();
-}
-
-// ─── Status bar ───────────────────────────────────────────────────────────────
-function drawStatusBar(ctx: CanvasRenderingContext2D, phone: string) {
-  const times = ["5:55", "6:14", "7:45", "8:12", "9:03", "10:24", "11:07", "12:30"];
-  const seed  = parseInt(phone2seed(phone));
-  const time  = times[seed % times.length];
-
-  ctx.save();
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 13px -apple-system,sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText(time, 14, STATUS_H / 2);
-
-  const by = STATUS_H / 2;
-
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.font = "9px sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(phone, W / 2, by);
-
-  ctx.fillStyle = "#fff";
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 1.2;
-  ctx.strokeRect(W - 34, by - 5.5, 20, 11);
-  ctx.beginPath(); ctx.arc(W - 14, by, 1.5, -Math.PI / 2, Math.PI / 2); ctx.stroke();
-  ctx.fillRect(W - 33, by - 4.5, 15, 9);
-
-  const sbx = W - 42;
-  [4, 6, 9, 12].forEach((bh, i) => {
-    ctx.globalAlpha = i < 2 ? 0.5 : 1;
-    ctx.fillRect(sbx - 16 + i * 5, by + 6 - bh, 3.5, bh);
-  });
-  ctx.globalAlpha = 1;
-
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 1.3;
-  ctx.lineCap = "round";
-  const wx = sbx - 28;
-  [5, 9, 13].forEach((r2, i) => {
-    ctx.globalAlpha = i === 0 ? 0.4 : i === 1 ? 0.65 : 1;
-    ctx.beginPath();
-    ctx.arc(wx, by + 5, r2, Math.PI * 1.2, Math.PI * 1.8);
-    ctx.stroke();
-  });
-  ctx.globalAlpha = 1;
-  ctx.beginPath(); ctx.arc(wx, by + 5, 1.8, 0, Math.PI * 2); ctx.fill();
-
-  ctx.restore();
-}
-
-// ─── Header ───────────────────────────────────────────────────────────────────
-function drawHeader(ctx: CanvasRenderingContext2D, user: RandomUser) {
-  const hy = STATUS_H;
-  const CY = hy + HEADER_H / 2;
-
-  const CR = 23;
-  const backX = 10;
-  whitePill(ctx, backX, CY - CR, CR * 2, CR * 2, CR);
-  iconArrowBack(ctx, backX + CR, CY, CR * 2, "#1a1a1a");
-
-  const RPW = 82, RPH = 48;
-  const RPX = W - RPW - 10;
-  whitePill(ctx, RPX, CY - RPH / 2, RPW, RPH, RPH / 2);
-  iconPhone(ctx, RPX + 22, CY, 20, "#1a1a1a");
-
-  ctx.save();
-  ctx.strokeStyle = "#e0e0e0"; ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(RPX + 42, CY - 12); ctx.lineTo(RPX + 42, CY + 12);
-  ctx.stroke();
-  ctx.restore();
-
-  iconThreeDots(ctx, RPX + 62, CY, "#1a1a1a");
-
-  const LE  = backX + CR * 2 + 8;
-  const RE  = RPX - 8;
-  const CPW = RE - LE;
-  const CPH = 52;
-  whitePill(ctx, LE, CY - CPH / 2, CPW, CPH, CPH / 2);
-
-  const AVR = 18;
-  const AVX = LE + AVR + 8;
-  ctx.save();
-  const grad = ctx.createRadialGradient(AVX - 4, CY - 4, 2, AVX, CY, AVR);
-  grad.addColorStop(0, user.avatarColor);
-  grad.addColorStop(1, darken(user.avatarColor, -40));
-  ctx.fillStyle = grad;
-  ctx.beginPath(); ctx.arc(AVX, CY, AVR, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 14px -apple-system,sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(user.name.charAt(0).toUpperCase(), AVX, CY);
-  ctx.restore();
-
-  const TX = AVX + AVR + 9;
-  ctx.save();
-  ctx.fillStyle = "#0a0a0a";
-  ctx.font = "bold 14px -apple-system,sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText(user.name, TX, CY - 7);
-
-  iconMute(ctx, TX + ctx.measureText(user.name).width + 14, CY - 7, "#888");
-
-  const lsOpts = [
-    "last seen recently",
-    "last seen 2 hours ago",
-    "last seen today at 1:30 PM",
-    "last seen yesterday",
-    "last seen Jun 26 at 10:11 AM",
-  ];
-  const lsi = Math.abs(parseInt(phone2seed(user.phone)) % lsOpts.length);
-  ctx.font = "11px -apple-system,sans-serif";
-  ctx.fillStyle = "#888";
-  ctx.textBaseline = "middle";
-  ctx.fillText(lsOpts[lsi], TX, CY + 8);
-  ctx.restore();
-}
-
-// ─── Bubble path ──────────────────────────────────────────────────────────────
-function bubblePath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, sent: boolean) {
-  const r = 16, tail = 4;
-  const tl = sent ? r : tail;
-  const tr = sent ? tail : r;
-  ctx.beginPath();
-  ctx.moveTo(x + tl, y);
-  ctx.lineTo(x + w - tr, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + tl);
-  ctx.quadraticCurveTo(x, y, x + tl, y);
-  ctx.closePath();
-}
-
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
-  ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let cur = "";
-  for (const w of words) {
-    const test = cur ? cur + " " + w : w;
-    if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
-    else cur = test;
-  }
-  if (cur) lines.push(cur);
-  return lines;
-}
-
-function iconDoubleCheck(ctx: CanvasRenderingContext2D, x: number, y: number, read: boolean) {
-  ctx.save();
-  ctx.strokeStyle = read ? "#4fc3f7" : "#8ab88a";
-  ctx.lineWidth = 1.6;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  [[x, y], [x + 4, y]].forEach(([cx, cy]) => {
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + 3);
-    ctx.lineTo(cx + 3, cy + 6);
-    ctx.lineTo(cx + 7, cy);
-    ctx.stroke();
-  });
-  ctx.restore();
-}
-
-function drawBubble(ctx: CanvasRenderingContext2D, msg: Message, y: number): number {
-  const SPAD = 12, VPAD = 8, LINE_H = 20, TIME_H = 16;
-  const maxBW = 260;
-
-  ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
-  const lines = wrapText(ctx, msg.text, maxBW - SPAD * 2 - 40);
-
-  ctx.font = "11px sans-serif";
-  const timeW = ctx.measureText(msg.time).width + (msg.sent ? 22 : 0) + 4;
-  ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
-  const maxLW = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const bw = Math.min(Math.max(maxLW + SPAD * 2 + 4, timeW + SPAD * 2), maxBW);
-  const bh = VPAD + lines.length * LINE_H + TIME_H + VPAD - 2;
-  const bx = msg.sent ? W - 10 - bw : 10;
-
-  ctx.save();
-  ctx.shadowColor   = "rgba(0,0,0,0.10)";
-  ctx.shadowBlur    = 5;
-  ctx.shadowOffsetY = 1;
-  ctx.fillStyle = msg.sent ? SENT_BG : RECV_BG;
-  bubblePath(ctx, bx, y, bw, bh, msg.sent);
-  ctx.fill();
-  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
-
-  ctx.fillStyle = "#111";
-  ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  lines.forEach((l, i) => ctx.fillText(l, bx + SPAD, y + VPAD + i * LINE_H));
-
-  const tY = y + bh - TIME_H;
-  ctx.font = "11px sans-serif";
-  ctx.textAlign = "right";
-  ctx.textBaseline = "top";
-  ctx.fillStyle = msg.sent ? SENT_TIME : RECV_TIME;
-  const tickOff = msg.sent ? 20 : 0;
-  ctx.fillText(msg.time, bx + bw - SPAD - tickOff, tY + 2);
-
-  if (msg.sent) {
-    iconDoubleCheck(ctx, bx + bw - SPAD - 16, tY + 2, !!msg.read);
-  }
-
-  ctx.restore();
-  return bh + 6;
-}
-
-// ─── Input bar ────────────────────────────────────────────────────────────────
-function drawInputBar(ctx: CanvasRenderingContext2D) {
-  const iy    = H - INPUT_H - NAV_H;
-  const CY    = iy + INPUT_H / 2;
-  const PAD   = 10;
-  const PILL_H = 48;
-  const MIC_R  = 22;
-  const MIC_CX = W - PAD - MIC_R;
-
-  ctx.save();
-
-  const pillW = MIC_CX - MIC_R - 6 - PAD;
-  whitePill(ctx, PAD, CY - PILL_H / 2, pillW, PILL_H, PILL_H / 2);
-
-  iconSmiley(ctx, PAD + 22, CY, 10, "#8a8a8a");
-
-  ctx.fillStyle = "#b0b0b0";
-  ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Message", PAD + 42, CY);
-
-  iconPaperclip(ctx, PAD + pillW - 22, CY, "#8a8a8a");
-
-  ctx.fillStyle = "#3390ec";
-  ctx.shadowColor   = "rgba(51,144,236,0.4)";
-  ctx.shadowBlur    = 10;
-  ctx.shadowOffsetY = 2;
-  ctx.beginPath();
-  ctx.arc(MIC_CX, CY, MIC_R, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
-
-  iconMic(ctx, MIC_CX, CY + 1, "#ffffff");
-
-  ctx.restore();
-}
-
-// ─── Nav bar ─────────────────────────────────────────────────────────────────
-function drawNavBar(ctx: CanvasRenderingContext2D) {
-  const ny = H - NAV_H;
-  const CY = ny + NAV_H / 2;
-  ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.75)";
-  ctx.fillRect(0, ny, W, NAV_H);
-
-  const iconColor = "rgba(255,255,255,0.6)";
-  iconNavSquares(ctx, W / 2 - 90, CY, iconColor);
-  ctx.strokeStyle = iconColor;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(W / 2, CY, 7, 0, Math.PI * 2); ctx.stroke();
-  iconNavBack(ctx, W / 2 + 90, CY, iconColor);
-
-  ctx.restore();
+    <!-- Nav bar -->
+    ${buildNavBar()}
+  `;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 export async function generateChatScreenshot(
   user: RandomUser,
   messages: Message[],
-  _myName: string
+  _myName: string,
 ): Promise<string> {
-  const canvas = document.createElement("canvas");
-  canvas.width  = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
+  const container = document.createElement("div");
+  container.style.cssText = [
+    `position:fixed`,
+    `left:-9999px`,
+    `top:0`,
+    `width:${W}px`,
+    `height:${H}px`,
+    `overflow:hidden`,
+    `box-sizing:border-box`,
+    `font-family:'Inter_400Regular','Inter',-apple-system,sans-serif`,
+  ].join(";");
 
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0,    "#b2d4a8");
-  bgGrad.addColorStop(0.45, "#6aab6a");
-  bgGrad.addColorStop(1,    "#4a8a4a");
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, H);
+  container.innerHTML = buildChatHtml(user, messages);
+  document.body.appendChild(container);
 
-  const pat = await loadPattern();
-  if (pat) {
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    const scale = Math.max(W / 1440, H / 2960);
-    const dw = 1440 * scale, dh = 2960 * scale;
-    ctx.drawImage(pat, (W - dw) / 2, (H - dh) / 2, dw, dh);
-    ctx.restore();
+  // Let fonts + pattern image settle
+  await document.fonts.ready;
+  await new Promise<void>((r) => setTimeout(r, 120));
+
+  try {
+    const canvas = await html2canvas(container, {
+      width:  W,
+      height: H,
+      scale:  2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+    });
+    return canvas.toDataURL("image/png");
+  } finally {
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
   }
-
-  drawStatusBar(ctx, user.phone);
-  drawHeader(ctx, user);
-
-  let cursor = CHAT_TOP + 8;
-  const visible = messages.slice(-10);
-  for (const msg of visible) {
-    const mh = drawBubble(ctx, msg, cursor);
-    cursor += mh;
-    if (cursor > CHAT_BOT - 10) break;
-  }
-
-  drawInputBar(ctx);
-  drawNavBar(ctx);
-
-  return canvas.toDataURL("image/png");
 }
