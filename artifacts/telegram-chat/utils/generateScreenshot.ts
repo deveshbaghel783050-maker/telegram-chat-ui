@@ -271,7 +271,7 @@ function buildChatHtml(user: RandomUser, messages: Message[], patternPngUrl: str
   // patternPngUrl is a real PNG data URL — html2canvas renders this perfectly
   const patternHtml = patternPngUrl
     ? `<img src="${patternPngUrl}"
-           style="position:absolute;inset:0;width:100%;height:100%;opacity:0.85;object-fit:cover;pointer-events:none;" />`
+           style="position:absolute;inset:0;width:100%;height:100%;opacity:1;object-fit:cover;pointer-events:none;" />`
     : "";
 
   return `
