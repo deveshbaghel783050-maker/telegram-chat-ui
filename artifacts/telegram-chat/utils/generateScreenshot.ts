@@ -1,27 +1,22 @@
 import { Message } from "@/context/ProfileContext";
 import { RandomUser } from "./randomData";
 
-// ─── Canvas dimensions (exact phone screen) ───────────────────────────────────
 const W = 390;
 const H = 844;
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
 const STATUS_H = 28;
 const HEADER_H = 72;
-const INPUT_H  = 58;
-const NAV_H    = 30;
+const INPUT_H  = 62;
+const NAV_H    = 32;
 const CHAT_TOP = STATUS_H + HEADER_H;
 const CHAT_BOT = H - INPUT_H - NAV_H;
 
-// ─── Colors ───────────────────────────────────────────────────────────────────
 const SENT_BG   = "#c8efaa";
 const RECV_BG   = "#ffffff";
 const SENT_TIME = "#6aaa55";
 const RECV_TIME = "#aaaaaa";
 
-// ─── SVG pattern cache ────────────────────────────────────────────────────────
 let _patternCache: HTMLImageElement | null = null;
-
 function loadPattern(): Promise<HTMLImageElement | null> {
   if (_patternCache) return Promise.resolve(_patternCache);
   return new Promise((resolve) => {
@@ -32,11 +27,7 @@ function loadPattern(): Promise<HTMLImageElement | null> {
   });
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function rrect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number
-) {
+function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const R = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + R, y);
@@ -51,12 +42,9 @@ function rrect(
   ctx.closePath();
 }
 
-function whitePill(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number
-) {
+function whitePill(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.save();
-  ctx.shadowColor   = "rgba(0,0,0,0.15)";
+  ctx.shadowColor   = "rgba(0,0,0,0.13)";
   ctx.shadowBlur    = 8;
   ctx.shadowOffsetY = 2;
   ctx.fillStyle = "#ffffff";
@@ -77,6 +65,181 @@ function darken(hex: string, amt: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
+// ─── Geometric icon helpers ───────────────────────────────────────────────────
+
+function iconArrowBack(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const s = size * 0.42;
+  ctx.beginPath();
+  ctx.moveTo(cx + s, cy - s);
+  ctx.lineTo(cx - s * 0.3, cy);
+  ctx.lineTo(cx + s, cy + s);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.3, cy);
+  ctx.lineTo(cx + s * 1.1, cy);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function iconPhone(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const s = size * 0.38;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.9, cy - s * 0.2);
+  ctx.quadraticCurveTo(cx - s, cy - s, cx - s * 0.3, cy - s * 1.1);
+  ctx.quadraticCurveTo(cx, cy - s * 1.3, cx + s * 0.1, cy - s * 0.8);
+  ctx.lineTo(cx - s * 0.1, cy - s * 0.5);
+  ctx.quadraticCurveTo(cx + s * 0.5, cy, cx + s * 0.8, cy - s * 0.1);
+  ctx.lineTo(cx + s * 1.1, cy - s * 0.3);
+  ctx.quadraticCurveTo(cx + s * 1.3, cy, cx + s * 1.1, cy + s * 0.3);
+  ctx.quadraticCurveTo(cx + s, cy + s * 0.9, cx + s * 0.2, cy + s);
+  ctx.quadraticCurveTo(cx - s * 0.5, cy + s * 1.1, cx - s, cy + s * 0.5);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function iconThreeDots(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.fillStyle = color;
+  [-7, 0, 7].forEach((dy) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy + dy, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function iconMute(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = "round";
+  const s = 5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, s, -Math.PI * 0.75, Math.PI * 0.75);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s);
+  ctx.lineTo(cx, cy + s);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 1.5, cy + s + 2);
+  ctx.lineTo(cx + 1.5, cy + s + 2);
+  ctx.stroke();
+  ctx.strokeStyle = "#e53935";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 1.2, cy - s * 0.8);
+  ctx.lineTo(cx + s * 1.2, cy + s * 0.8);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function iconSmiley(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.6;
+  ctx.lineCap = "round";
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx - r * 0.3, cy - r * 0.2, 1.2, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + r * 0.3, cy - r * 0.2, 1.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy + r * 0.1, r * 0.5, 0, Math.PI); ctx.stroke();
+  ctx.restore();
+}
+
+function iconPaperclip(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.7;
+  ctx.lineCap = "round";
+  const s = 7;
+  ctx.beginPath();
+  ctx.moveTo(cx + s * 0.5, cy - s * 0.7);
+  ctx.arcTo(cx + s, cy - s * 0.2, cx + s, cy + s * 0.3, s * 0.5);
+  ctx.arcTo(cx + s, cy + s * 0.8, cx + s * 0.5, cy + s, s * 0.5);
+  ctx.lineTo(cx - s * 0.5, cy + s * 0.7);
+  ctx.arcTo(cx - s, cy + s * 0.2, cx - s, cy - s * 0.3, s * 0.5);
+  ctx.arcTo(cx - s, cy - s * 1.2, cx, cy - s * 1.2, s * 0.8);
+  ctx.arcTo(cx + s * 0.5, cy - s * 1.2, cx + s * 0.5, cy - s * 0.7, s * 0.5);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function iconMic(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.6;
+  ctx.lineCap = "round";
+  const mw = 4, mh = 7, mr = 2;
+  rrect(ctx, cx - mw / 2, cy - mh - 2, mw, mh, mr);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy - 2, mw + 2, 0, Math.PI);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + mw);
+  ctx.lineTo(cx, cy + mw + 3);
+  ctx.moveTo(cx - 3, cy + mw + 3);
+  ctx.lineTo(cx + 3, cy + mw + 3);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function iconNavSquares(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  const s = 4, gap = 2;
+  [[-s - gap / 2, -s - gap / 2], [gap / 2, -s - gap / 2], [-s - gap / 2, gap / 2], [gap / 2, gap / 2]].forEach(([dx, dy]) => {
+    ctx.strokeRect(cx + dx, cy + dy, s, s);
+  });
+  ctx.restore();
+}
+
+function iconNavHome(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const s = 7;
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy + s * 0.3);
+  ctx.lineTo(cx, cy - s * 0.7);
+  ctx.lineTo(cx + s, cy + s * 0.3);
+  ctx.moveTo(cx - s * 0.6, cy + s * 0.3);
+  ctx.lineTo(cx - s * 0.6, cy + s);
+  ctx.lineTo(cx + s * 0.6, cy + s);
+  ctx.lineTo(cx + s * 0.6, cy + s * 0.3);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function iconNavBack(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const s = 6;
+  ctx.beginPath();
+  ctx.moveTo(cx + s, cy - s * 0.7);
+  ctx.lineTo(cx - s * 0.4, cy);
+  ctx.lineTo(cx + s, cy + s * 0.7);
+  ctx.stroke();
+  ctx.restore();
+}
+
 // ─── Status bar ───────────────────────────────────────────────────────────────
 function drawStatusBar(ctx: CanvasRenderingContext2D, phone: string) {
   const times = ["5:55", "6:14", "7:45", "8:12", "9:03", "10:24", "11:07", "12:30"];
@@ -85,46 +248,44 @@ function drawStatusBar(ctx: CanvasRenderingContext2D, phone: string) {
 
   ctx.save();
   ctx.fillStyle = "#fff";
-  ctx.font = "bold 13.5px -apple-system,sans-serif";
+  ctx.font = "bold 13px -apple-system,sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(time, 12, STATUS_H / 2);
-
-  ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.font = "8px sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(phone, W / 2, STATUS_H / 2);
+  ctx.fillText(time, 14, STATUS_H / 2);
 
   const by = STATUS_H / 2;
 
-  // Battery
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.font = "9px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(phone, W / 2, by);
+
   ctx.fillStyle = "#fff";
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 1.2;
-  ctx.strokeRect(W - 34, by - 6, 22, 12);
-  ctx.strokeRect(W - 12, by - 3, 2.5, 6);
-  ctx.fillRect(W - 33, by - 5, 17, 10);
+  ctx.strokeRect(W - 34, by - 5.5, 20, 11);
+  ctx.beginPath(); ctx.arc(W - 14, by, 1.5, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+  ctx.fillRect(W - 33, by - 4.5, 15, 9);
 
-  // Signal bars
   const sbx = W - 42;
-  [4, 7, 10, 13].forEach((bh, i) => {
-    ctx.fillRect(sbx - 18 + i * 5, by + 6 - bh, 3.5, bh);
+  [4, 6, 9, 12].forEach((bh, i) => {
+    ctx.globalAlpha = i < 2 ? 0.5 : 1;
+    ctx.fillRect(sbx - 16 + i * 5, by + 6 - bh, 3.5, bh);
   });
+  ctx.globalAlpha = 1;
 
-  // Wifi
   ctx.strokeStyle = "#fff";
   ctx.lineWidth = 1.3;
   ctx.lineCap = "round";
-  const wx = sbx - 30;
+  const wx = sbx - 28;
   [5, 9, 13].forEach((r2, i) => {
-    ctx.globalAlpha = i < 2 ? 0.5 : 1;
+    ctx.globalAlpha = i === 0 ? 0.4 : i === 1 ? 0.65 : 1;
     ctx.beginPath();
-    ctx.arc(wx, by + 5, r2, Math.PI * 1.25, Math.PI * 1.75);
+    ctx.arc(wx, by + 5, r2, Math.PI * 1.2, Math.PI * 1.8);
     ctx.stroke();
   });
   ctx.globalAlpha = 1;
-  ctx.fillStyle = "#fff";
-  ctx.beginPath(); ctx.arc(wx, by + 5, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(wx, by + 5, 1.8, 0, Math.PI * 2); ctx.fill();
 
   ctx.restore();
 }
@@ -134,53 +295,31 @@ function drawHeader(ctx: CanvasRenderingContext2D, user: RandomUser) {
   const hy = STATUS_H;
   const CY = hy + HEADER_H / 2;
 
-  // Back circle
   const CR = 23;
   const backX = 10;
   whitePill(ctx, backX, CY - CR, CR * 2, CR * 2, CR);
-  ctx.save();
-  ctx.fillStyle = "#1a1a1a";
-  ctx.font = "bold 18px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("←", backX + CR, CY);
-  ctx.restore();
+  iconArrowBack(ctx, backX + CR, CY, CR * 2, "#1a1a1a");
 
-  // Right pill
-  const RPW = 78, RPH = 48;
+  const RPW = 82, RPH = 48;
   const RPX = W - RPW - 10;
   whitePill(ctx, RPX, CY - RPH / 2, RPW, RPH, RPH / 2);
+  iconPhone(ctx, RPX + 22, CY, 20, "#1a1a1a");
 
   ctx.save();
-  ctx.font = "17px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("📞", RPX + 20, CY);
-  ctx.restore();
-
-  ctx.save();
-  ctx.strokeStyle = "#ddd"; ctx.lineWidth = 1;
+  ctx.strokeStyle = "#e0e0e0"; ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(RPX + 40, CY - 12); ctx.lineTo(RPX + 40, CY + 12);
+  ctx.moveTo(RPX + 42, CY - 12); ctx.lineTo(RPX + 42, CY + 12);
   ctx.stroke();
   ctx.restore();
 
-  ctx.save();
-  ctx.fillStyle = "#111";
-  ctx.font = "bold 22px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("⋮", RPX + 59, CY);
-  ctx.restore();
+  iconThreeDots(ctx, RPX + 62, CY, "#1a1a1a");
 
-  // Centre pill
   const LE  = backX + CR * 2 + 8;
   const RE  = RPX - 8;
   const CPW = RE - LE;
   const CPH = 52;
   whitePill(ctx, LE, CY - CPH / 2, CPW, CPH, CPH / 2);
 
-  // Avatar
   const AVR = 18;
   const AVX = LE + AVR + 8;
   ctx.save();
@@ -196,18 +335,15 @@ function drawHeader(ctx: CanvasRenderingContext2D, user: RandomUser) {
   ctx.fillText(user.name.charAt(0).toUpperCase(), AVX, CY);
   ctx.restore();
 
-  // Name + mute + last seen
   const TX = AVX + AVR + 9;
   ctx.save();
   ctx.fillStyle = "#0a0a0a";
   ctx.font = "bold 14px -apple-system,sans-serif";
   ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText(user.name, TX, CY - 3);
-  const nw = ctx.measureText(user.name).width;
-  ctx.font = "11px sans-serif";
-  ctx.fillStyle = "#666";
-  ctx.fillText("🔕", TX + nw + 4, CY - 3);
+  ctx.textBaseline = "middle";
+  ctx.fillText(user.name, TX, CY - 7);
+
+  iconMute(ctx, TX + ctx.measureText(user.name).width + 14, CY - 7, "#888");
 
   const lsOpts = [
     "last seen recently",
@@ -217,18 +353,15 @@ function drawHeader(ctx: CanvasRenderingContext2D, user: RandomUser) {
     "last seen Jun 26 at 10:11 AM",
   ];
   const lsi = Math.abs(parseInt(phone2seed(user.phone)) % lsOpts.length);
-  ctx.font = "10.5px -apple-system,sans-serif";
+  ctx.font = "11px -apple-system,sans-serif";
   ctx.fillStyle = "#888";
-  ctx.textBaseline = "top";
-  ctx.fillText(lsOpts[lsi], TX, CY + 6);
+  ctx.textBaseline = "middle";
+  ctx.fillText(lsOpts[lsi], TX, CY + 8);
   ctx.restore();
 }
 
-// ─── Bubble path ─────────────────────────────────────────────────────────────
-function bubblePath(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, sent: boolean
-) {
+// ─── Bubble path ──────────────────────────────────────────────────────────────
+function bubblePath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, sent: boolean) {
   const r = 16, tail = 4;
   const tl = sent ? r : tail;
   const tr = sent ? tail : r;
@@ -259,11 +392,23 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): st
   return lines;
 }
 
-function drawBubble(
-  ctx: CanvasRenderingContext2D,
-  msg: Message,
-  y: number
-): number {
+function iconDoubleCheck(ctx: CanvasRenderingContext2D, x: number, y: number, read: boolean) {
+  ctx.save();
+  ctx.strokeStyle = read ? "#4fc3f7" : "#8ab88a";
+  ctx.lineWidth = 1.6;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  [[x, y], [x + 4, y]].forEach(([cx, cy]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + 3);
+    ctx.lineTo(cx + 3, cy + 6);
+    ctx.lineTo(cx + 7, cy);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawBubble(ctx: CanvasRenderingContext2D, msg: Message, y: number): number {
   const SPAD = 12, VPAD = 8, LINE_H = 20, TIME_H = 16;
   const maxBW = 260;
 
@@ -271,12 +416,12 @@ function drawBubble(
   const lines = wrapText(ctx, msg.text, maxBW - SPAD * 2 - 40);
 
   ctx.font = "11px sans-serif";
-  const timeW = ctx.measureText(msg.time).width + (msg.sent ? 18 : 0) + 4;
+  const timeW = ctx.measureText(msg.time).width + (msg.sent ? 22 : 0) + 4;
   ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
   const maxLW = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const bw    = Math.min(Math.max(maxLW + SPAD * 2 + 4, timeW + SPAD * 2), maxBW);
-  const bh    = VPAD + lines.length * LINE_H + TIME_H + VPAD - 2;
-  const bx    = msg.sent ? W - 10 - bw : 10;
+  const bw = Math.min(Math.max(maxLW + SPAD * 2 + 4, timeW + SPAD * 2), maxBW);
+  const bh = VPAD + lines.length * LINE_H + TIME_H + VPAD - 2;
+  const bx = msg.sent ? W - 10 - bw : 10;
 
   ctx.save();
   ctx.shadowColor   = "rgba(0,0,0,0.10)";
@@ -293,24 +438,16 @@ function drawBubble(
   ctx.textBaseline = "top";
   lines.forEach((l, i) => ctx.fillText(l, bx + SPAD, y + VPAD + i * LINE_H));
 
-  if (msg.edited) {
-    ctx.font = "italic 9.5px sans-serif";
-    ctx.fillStyle = "#aaa";
-    ctx.fillText("edited", bx + SPAD, y + VPAD + lines.length * LINE_H);
-  }
-
   const tY = y + bh - TIME_H;
   ctx.font = "11px sans-serif";
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
   ctx.fillStyle = msg.sent ? SENT_TIME : RECV_TIME;
-  const tickOff = msg.sent ? 18 : 0;
+  const tickOff = msg.sent ? 20 : 0;
   ctx.fillText(msg.time, bx + bw - SPAD - tickOff, tY + 2);
 
   if (msg.sent) {
-    ctx.fillStyle = msg.read ? "#4fc3f7" : "#8ab88a";
-    ctx.font = "bold 10px sans-serif";
-    ctx.fillText("✓✓", bx + bw - SPAD + 2, tY + 2);
+    iconDoubleCheck(ctx, bx + bw - SPAD - 16, tY + 2, !!msg.read);
   }
 
   ctx.restore();
@@ -322,39 +459,27 @@ function drawInputBar(ctx: CanvasRenderingContext2D) {
   const iy    = H - INPUT_H - NAV_H;
   const CY    = iy + INPUT_H / 2;
   const PAD   = 10;
-  const PILL_H = 46;
-  const PILL_Y = CY - PILL_H / 2;
-  const MIC_R  = 21;
+  const PILL_H = 48;
+  const MIC_R  = 22;
   const MIC_CX = W - PAD - MIC_R;
 
   ctx.save();
 
-  // White pill: from left edge to just before the mic circle
-  const pillW = MIC_CX - MIC_R - 4 - PAD * 2;
-  whitePill(ctx, PAD, PILL_Y, pillW, PILL_H, PILL_H / 2);
+  const pillW = MIC_CX - MIC_R - 6 - PAD;
+  whitePill(ctx, PAD, CY - PILL_H / 2, pillW, PILL_H, PILL_H / 2);
 
-  // Emoji icon inside pill (left side)
-  ctx.font = "20px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("🙂", PAD + 22, CY);
+  iconSmiley(ctx, PAD + 22, CY, 10, "#8a8a8a");
 
-  // "Message" placeholder text
   ctx.fillStyle = "#b0b0b0";
   ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("Message", PAD + 44, CY);
+  ctx.fillText("Message", PAD + 42, CY);
 
-  // Paperclip icon (right inside pill)
-  ctx.fillStyle = "#8a8a8a";
-  ctx.font = "16px sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("📎", PAD + pillW - 22, CY);
+  iconPaperclip(ctx, PAD + pillW - 22, CY, "#8a8a8a");
 
-  // Blue mic circle (right of pill, matching actual component)
   ctx.fillStyle = "#3390ec";
-  ctx.shadowColor   = "rgba(51,144,236,0.35)";
+  ctx.shadowColor   = "rgba(51,144,236,0.4)";
   ctx.shadowBlur    = 10;
   ctx.shadowOffsetY = 2;
   ctx.beginPath();
@@ -362,11 +487,7 @@ function drawInputBar(ctx: CanvasRenderingContext2D) {
   ctx.fill();
   ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
 
-  ctx.fillStyle = "#fff";
-  ctx.font = "14px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("🎤", MIC_CX, CY + 1);
+  iconMic(ctx, MIC_CX, CY + 1, "#ffffff");
 
   ctx.restore();
 }
@@ -374,35 +495,18 @@ function drawInputBar(ctx: CanvasRenderingContext2D) {
 // ─── Nav bar ─────────────────────────────────────────────────────────────────
 function drawNavBar(ctx: CanvasRenderingContext2D) {
   const ny = H - NAV_H;
+  const CY = ny + NAV_H / 2;
   ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.72)";
+  ctx.fillStyle = "rgba(0,0,0,0.75)";
   ctx.fillRect(0, ny, W, NAV_H);
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.font = "14px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("≡",  W / 2 - 90, ny + NAV_H / 2);
-  ctx.fillText("○",  W / 2,      ny + NAV_H / 2);
-  ctx.fillText("←",  W / 2 + 90, ny + NAV_H / 2);
-  ctx.restore();
-}
 
-// ─── Scroll button ────────────────────────────────────────────────────────────
-function drawScrollBtn(ctx: CanvasRenderingContext2D) {
-  const bx = W - 44;
-  const by = H - INPUT_H - NAV_H - 48;
-  ctx.save();
-  ctx.fillStyle = "#fff";
-  ctx.shadowColor   = "rgba(0,0,0,0.18)";
-  ctx.shadowBlur    = 8;
-  ctx.shadowOffsetY = 2;
-  ctx.beginPath(); ctx.arc(bx, by, 16, 0, Math.PI * 2); ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.fillStyle = "#555";
-  ctx.font = "bold 13px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("∨", bx, by + 1);
+  const iconColor = "rgba(255,255,255,0.6)";
+  iconNavSquares(ctx, W / 2 - 90, CY, iconColor);
+  ctx.strokeStyle = iconColor;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(W / 2, CY, 7, 0, Math.PI * 2); ctx.stroke();
+  iconNavBack(ctx, W / 2 + 90, CY, iconColor);
+
   ctx.restore();
 }
 
@@ -417,7 +521,6 @@ export async function generateChatScreenshot(
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  // 1. Green gradient — exact Telegram green
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
   bgGrad.addColorStop(0,    "#b2d4a8");
   bgGrad.addColorStop(0.45, "#6aab6a");
@@ -425,26 +528,19 @@ export async function generateChatScreenshot(
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Real SVG doodle pattern (from /pattern.svg)
   const pat = await loadPattern();
   if (pat) {
     ctx.save();
     ctx.globalAlpha = 0.16;
-    const scaleX = W / 1440;
-    const scaleY = H / 2960;
-    const scale  = Math.max(scaleX, scaleY);
+    const scale = Math.max(W / 1440, H / 2960);
     const dw = 1440 * scale, dh = 2960 * scale;
     ctx.drawImage(pat, (W - dw) / 2, (H - dh) / 2, dw, dh);
     ctx.restore();
   }
 
-  // 3. Status bar
   drawStatusBar(ctx, user.phone);
-
-  // 4. Header (pill-style exactly like reference)
   drawHeader(ctx, user);
 
-  // 5. Messages
   let cursor = CHAT_TOP + 8;
   const visible = messages.slice(-10);
   for (const msg of visible) {
@@ -453,10 +549,7 @@ export async function generateChatScreenshot(
     if (cursor > CHAT_BOT - 10) break;
   }
 
-  // 6. Input bar (no scroll button — clean output)
   drawInputBar(ctx);
-
-  // 7. Nav bar
   drawNavBar(ctx);
 
   return canvas.toDataURL("image/png");
