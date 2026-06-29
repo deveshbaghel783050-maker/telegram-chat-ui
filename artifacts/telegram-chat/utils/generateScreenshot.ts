@@ -319,46 +319,54 @@ function drawBubble(
 
 // ─── Input bar ────────────────────────────────────────────────────────────────
 function drawInputBar(ctx: CanvasRenderingContext2D) {
-  const iy = H - INPUT_H - NAV_H;
-  ctx.save();
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, iy, W, INPUT_H);
-  ctx.strokeStyle = "#e8e8e8";
-  ctx.lineWidth   = 0.5;
-  ctx.beginPath(); ctx.moveTo(0, iy); ctx.lineTo(W, iy); ctx.stroke();
+  const iy    = H - INPUT_H - NAV_H;
+  const CY    = iy + INPUT_H / 2;
+  const PAD   = 10;
+  const PILL_H = 46;
+  const PILL_Y = CY - PILL_H / 2;
+  const MIC_R  = 21;
+  const MIC_CX = W - PAD - MIC_R;
 
+  ctx.save();
+
+  // White pill: from left edge to just before the mic circle
+  const pillW = MIC_CX - MIC_R - 4 - PAD * 2;
+  whitePill(ctx, PAD, PILL_Y, pillW, PILL_H, PILL_H / 2);
+
+  // Emoji icon inside pill (left side)
   ctx.font = "20px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("🙂", 24, iy + INPUT_H / 2);
+  ctx.fillText("🙂", PAD + 22, CY);
 
-  ctx.fillStyle = "#f0f0f0";
-  rrect(ctx, 46, iy + 10, W - 46 - 50, INPUT_H - 20, 20);
-  ctx.fill();
-  ctx.fillStyle = "#bbb";
-  ctx.font = "14px -apple-system,sans-serif";
+  // "Message" placeholder text
+  ctx.fillStyle = "#b0b0b0";
+  ctx.font = "15px -apple-system,'Segoe UI',sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("Message", 62, iy + INPUT_H / 2);
+  ctx.fillText("Message", PAD + 44, CY);
 
-  ctx.fillStyle = "#999";
-  ctx.font = "19px sans-serif";
+  // Paperclip icon (right inside pill)
+  ctx.fillStyle = "#8a8a8a";
+  ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("📎", W - 38, iy + INPUT_H / 2);
+  ctx.fillText("📎", PAD + pillW - 22, CY);
 
-  // Blue mic button (Telegram style)
+  // Blue mic circle (right of pill, matching actual component)
   ctx.fillStyle = "#3390ec";
   ctx.shadowColor   = "rgba(51,144,236,0.35)";
-  ctx.shadowBlur    = 8;
+  ctx.shadowBlur    = 10;
   ctx.shadowOffsetY = 2;
   ctx.beginPath();
-  ctx.arc(W - 16, iy + INPUT_H / 2, 16, 0, Math.PI * 2);
+  ctx.arc(MIC_CX, CY, MIC_R, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+
   ctx.fillStyle = "#fff";
-  ctx.font = "13px sans-serif";
+  ctx.font = "14px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("🎤", W - 16, iy + INPUT_H / 2 + 1);
+  ctx.textBaseline = "middle";
+  ctx.fillText("🎤", MIC_CX, CY + 1);
 
   ctx.restore();
 }
@@ -445,13 +453,10 @@ export async function generateChatScreenshot(
     if (cursor > CHAT_BOT - 10) break;
   }
 
-  // 6. Scroll button
-  drawScrollBtn(ctx);
-
-  // 7. Input bar
+  // 6. Input bar (no scroll button — clean output)
   drawInputBar(ctx);
 
-  // 8. Nav bar
+  // 7. Nav bar
   drawNavBar(ctx);
 
   return canvas.toDataURL("image/png");
