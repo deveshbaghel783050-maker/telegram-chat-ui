@@ -74,7 +74,7 @@ const ts = StyleSheet.create({
 type ListItem = Message | { id: string; _typing: true };
 
 export default function ChatScreen() {
-  const { messages, addMessage, theirName, myName } = useProfile();
+  const { messages, addMessage, theirName, theirUsername, theirPhone, myName } = useProfile();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [downloading, setDownloading] = useState(false);
