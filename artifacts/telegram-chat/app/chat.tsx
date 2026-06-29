@@ -148,8 +148,7 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={["#b2d4a8", "#6aab6a", "#4a8a4a"]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
-      <PatternOverlay />
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7a9e72" }]} />
       <ChatHeader />
 
       <KeyboardAvoidingView
@@ -178,7 +177,7 @@ export default function ChatScreen() {
 
           {/* Fade gradient at bottom so messages blend into input bar */}
           <LinearGradient
-            colors={["transparent", "rgba(74,138,74,0.85)"]}
+            colors={["transparent", "rgba(122,158,114,0.92)"]}
             style={styles.bottomFade}
           />
         </View>
