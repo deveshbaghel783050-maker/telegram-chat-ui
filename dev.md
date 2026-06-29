@@ -138,12 +138,16 @@ Pattern SVG is fetched from `/pattern.svg` (served as static file). `web/pattern
 - **Fix**: Moved mic circle outside the pill as separate element (real Telegram layout)
 
 ### 6. Pattern not showing in automation screenshots (multiple attempts — FINAL FIX)
-- **Problem**: `html2canvas` does NOT render SVGs in ANY form (inline, data URL img src, blob URL img src) — always blank
-- **FINAL approach** — 3-step canvas composite AFTER html2canvas:
-  1. html2canvas renders chat WITHOUT pattern (solid green bg only)
-  2. `renderPatternToCanvas(W, H)` → fetch SVG → inject fill → Blob URL → drawImage → returns real `HTMLCanvasElement`
-  3. Composite canvas: draw green bg + pattern at 0.55 opacity + chat canvas on top
-- **Key rule**: NEVER pass SVG to html2canvas. Do pattern as a SEPARATE canvas step and composite manually.
+- **Problem**: `html2canvas` does NOT render SVGs. SVG blob URL → canvas also fails silently (Chrome security taint on `drawImage` with SVG src)
+- **FINAL approach** — pre-render SVG to static PNG + 3-step canvas composite:
+  1. `magick web/pattern.svg -resize 390x844! web/pattern-bg.png` → static PNG served at `/pattern-bg.png`
+  2. html2canvas renders chat WITHOUT pattern (solid green bg only)
+  3. `renderPatternToCanvas` loads `/pattern-bg.png` (same-origin PNG → NO canvas taint) → `HTMLCanvasElement`
+  4. Composite: green bg + pattern canvas (0.55 opacity) + chat UI on top
+- **Key rules**:
+  - NEVER use SVG (any form) with html2canvas or canvas drawImage
+  - PNG from same-origin = no canvas taint = `toDataURL()` always works
+  - If SVG changes, re-run: `magick artifacts/telegram-chat/web/pattern.svg -resize 390x844! artifacts/telegram-chat/web/pattern-bg.png`
 
 ### 7. Last opponent message cut off at bottom in automation
 - **Problem**: Messages area used `justify-content:flex-start` — messages filled from top, overflow cut at bottom (visible as half-message)

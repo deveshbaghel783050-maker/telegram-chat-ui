@@ -238,46 +238,24 @@ function padMessages(messages: Message[], minCount: number): Message[] {
   return padded;
 }
 
-// ─── Render pattern SVG → HTMLCanvasElement ───────────────────────────────────
-// html2canvas CANNOT render SVGs. Draw SVG onto a real canvas separately,
-// then composite the canvas onto the final output after html2canvas is done.
+// ─── Load pre-rendered pattern PNG → HTMLCanvasElement ───────────────────────
+// Uses a static PNG (pattern-bg.png) pre-generated from the SVG.
+// PNG is same-origin → no canvas taint → toDataURL() always works.
 async function renderPatternToCanvas(targetW: number, targetH: number): Promise<HTMLCanvasElement | null> {
-  try {
-    const res = await fetch("/pattern.svg");
-    if (!res.ok) return null;
-    const rawSvg = await res.text();
-
-    const styledSvg = rawSvg.replace(/<svg([^>]*)>/, (_, attrs) => {
-      const cleaned = attrs
-        .replace(/\s+width="[^"]*"/g, "")
-        .replace(/\s+height="[^"]*"/g, "")
-        .replace(/\s+x="[^"]*"/g, "")
-        .replace(/\s+y="[^"]*"/g, "")
-        .replace(/\s+preserveAspectRatio="[^"]*"/g, "");
-      return `<svg${cleaned} width="${targetW}" height="${targetH}" preserveAspectRatio="xMidYMid slice" fill="#559e4e">`;
-    });
-
-    const blob = new Blob([styledSvg], { type: "image/svg+xml" });
-    const blobUrl = URL.createObjectURL(blob);
-
-    return await new Promise<HTMLCanvasElement | null>((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width  = targetW;
-        canvas.height = targetH;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { URL.revokeObjectURL(blobUrl); resolve(null); return; }
-        ctx.drawImage(img, 0, 0, targetW, targetH);
-        URL.revokeObjectURL(blobUrl);
-        resolve(canvas);
-      };
-      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
-      img.src = blobUrl;
-    });
-  } catch {
-    return null;
-  }
+  return new Promise<HTMLCanvasElement | null>((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width  = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(null); return; }
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      resolve(canvas);
+    };
+    img.onerror = () => resolve(null);
+    img.src = "/pattern-bg.png";
+  });
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
