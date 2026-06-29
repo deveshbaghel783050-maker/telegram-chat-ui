@@ -65,135 +65,174 @@ function darken(hex: string, amt: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-// ─── Geometric icon helpers ───────────────────────────────────────────────────
+// ─── SVG path helper (renders actual icon SVG paths via Path2D) ───────────────
 
-function iconArrowBack(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
+function drawIconPath(
+  ctx: CanvasRenderingContext2D,
+  svgPath: string,
+  cx: number, cy: number,
+  displaySize: number,
+  viewBoxSize: number,
+  color: string,
+  mode: "fill" | "stroke" = "stroke",
+  strokeWidth = 2,
+) {
+  const scale = displaySize / viewBoxSize;
+  ctx.save();
+  ctx.translate(cx - displaySize / 2, cy - displaySize / 2);
+  ctx.scale(scale, scale);
+  const path = new Path2D(svgPath);
+  if (mode === "stroke") {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = strokeWidth / scale;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke(path);
+  } else {
+    ctx.fillStyle = color;
+    ctx.fill(path);
+  }
+  ctx.restore();
+}
+
+// ─── Icon definitions matching the /chat screen exactly ──────────────────────
+
+// Ionicons "arrow-back"  (matches ChatHeader back button)
+function iconArrowBack(ctx: CanvasRenderingContext2D, cx: number, cy: number, _size: number, color: string) {
+  const S = 10;
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 2.2;
+  ctx.lineWidth = 2.3;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  const s = size * 0.42;
   ctx.beginPath();
-  ctx.moveTo(cx + s, cy - s);
-  ctx.lineTo(cx - s * 0.3, cy);
-  ctx.lineTo(cx + s, cy + s);
+  ctx.moveTo(cx + S * 0.55, cy - S * 0.65);
+  ctx.lineTo(cx - S * 0.35, cy);
+  ctx.lineTo(cx + S * 0.55, cy + S * 0.65);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(cx - s * 0.3, cy);
-  ctx.lineTo(cx + s * 1.1, cy);
+  ctx.moveTo(cx - S * 0.35, cy);
+  ctx.lineTo(cx + S * 0.9, cy);
   ctx.stroke();
   ctx.restore();
 }
+
+// Feather "phone"  (matches ChatHeader right pill phone button)
+// Feather icons viewBox: 24x24, stroke-based
+const FEATHER_PHONE =
+  "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.43 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.69a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z";
 
 function iconPhone(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.8;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const s = size * 0.38;
-  ctx.beginPath();
-  ctx.moveTo(cx - s * 0.9, cy - s * 0.2);
-  ctx.quadraticCurveTo(cx - s, cy - s, cx - s * 0.3, cy - s * 1.1);
-  ctx.quadraticCurveTo(cx, cy - s * 1.3, cx + s * 0.1, cy - s * 0.8);
-  ctx.lineTo(cx - s * 0.1, cy - s * 0.5);
-  ctx.quadraticCurveTo(cx + s * 0.5, cy, cx + s * 0.8, cy - s * 0.1);
-  ctx.lineTo(cx + s * 1.1, cy - s * 0.3);
-  ctx.quadraticCurveTo(cx + s * 1.3, cy, cx + s * 1.1, cy + s * 0.3);
-  ctx.quadraticCurveTo(cx + s, cy + s * 0.9, cx + s * 0.2, cy + s);
-  ctx.quadraticCurveTo(cx - s * 0.5, cy + s * 1.1, cx - s, cy + s * 0.5);
-  ctx.stroke();
-  ctx.restore();
+  drawIconPath(ctx, FEATHER_PHONE, cx, cy, size, 24, color, "stroke", 1.8);
 }
 
+// Feather "more-vertical"  (matches ChatHeader right pill three-dot button)
 function iconThreeDots(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
   ctx.save();
   ctx.fillStyle = color;
   [-7, 0, 7].forEach((dy) => {
     ctx.beginPath();
-    ctx.arc(cx, cy + dy, 2.2, 0, Math.PI * 2);
+    ctx.arc(cx, cy + dy, 2.5, 0, Math.PI * 2);
     ctx.fill();
   });
   ctx.restore();
 }
 
+// MaterialIcons "volume-off"  (matches ChatHeader mute icon next to name)
 function iconMute(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.4;
   ctx.lineCap = "round";
+  ctx.lineJoin = "round";
   const s = 5;
+  // speaker body
   ctx.beginPath();
-  ctx.arc(cx, cy, s, -Math.PI * 0.75, Math.PI * 0.75);
+  ctx.moveTo(cx - s * 1.1, cy - s * 0.5);
+  ctx.lineTo(cx - s * 0.3, cy - s * 0.5);
+  ctx.lineTo(cx + s * 0.5, cy - s * 1.1);
+  ctx.lineTo(cx + s * 0.5, cy + s * 1.1);
+  ctx.lineTo(cx - s * 0.3, cy + s * 0.5);
+  ctx.lineTo(cx - s * 1.1, cy + s * 0.5);
+  ctx.closePath();
   ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - s);
-  ctx.lineTo(cx, cy + s);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx - 1.5, cy + s + 2);
-  ctx.lineTo(cx + 1.5, cy + s + 2);
-  ctx.stroke();
+  // X slash lines
   ctx.strokeStyle = "#e53935";
   ctx.lineWidth = 1.4;
   ctx.beginPath();
-  ctx.moveTo(cx - s * 1.2, cy - s * 0.8);
-  ctx.lineTo(cx + s * 1.2, cy + s * 0.8);
+  ctx.moveTo(cx + s * 0.85, cy - s * 0.6);
+  ctx.lineTo(cx + s * 1.7,  cy + s * 0.6);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx + s * 1.7,  cy - s * 0.6);
+  ctx.lineTo(cx + s * 0.85, cy + s * 0.6);
   ctx.stroke();
   ctx.restore();
 }
 
+// Ionicons "happy-outline"  (matches ChatInput emoji button)
 function iconSmiley(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.6;
-  ctx.lineCap = "round";
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx - r * 0.3, cy - r * 0.2, 1.2, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + r * 0.3, cy - r * 0.2, 1.2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx, cy + r * 0.1, r * 0.5, 0, Math.PI); ctx.stroke();
-  ctx.restore();
-}
-
-function iconPaperclip(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.7;
   ctx.lineCap = "round";
-  const s = 7;
+  // outer circle
   ctx.beginPath();
-  ctx.moveTo(cx + s * 0.5, cy - s * 0.7);
-  ctx.arcTo(cx + s, cy - s * 0.2, cx + s, cy + s * 0.3, s * 0.5);
-  ctx.arcTo(cx + s, cy + s * 0.8, cx + s * 0.5, cy + s, s * 0.5);
-  ctx.lineTo(cx - s * 0.5, cy + s * 0.7);
-  ctx.arcTo(cx - s, cy + s * 0.2, cx - s, cy - s * 0.3, s * 0.5);
-  ctx.arcTo(cx - s, cy - s * 1.2, cx, cy - s * 1.2, s * 0.8);
-  ctx.arcTo(cx + s * 0.5, cy - s * 1.2, cx + s * 0.5, cy - s * 0.7, s * 0.5);
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  // left eye
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.32, cy - r * 0.22, 1.4, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  // right eye
+  ctx.beginPath();
+  ctx.arc(cx + r * 0.32, cy - r * 0.22, 1.4, 0, Math.PI * 2);
+  ctx.fill();
+  // smile arc
+  ctx.beginPath();
+  ctx.arc(cx, cy + r * 0.08, r * 0.48, 0.15, Math.PI - 0.15);
   ctx.stroke();
   ctx.restore();
 }
 
+// Feather "paperclip"  (matches ChatInput attach button)
+const FEATHER_PAPERCLIP =
+  "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48";
+
+function iconPaperclip(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  drawIconPath(ctx, FEATHER_PAPERCLIP, cx, cy, 22, 24, color, "stroke", 1.8);
+}
+
+// Ionicons "mic"  (matches ChatInput mic button)
 function iconMic(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
   ctx.save();
-  ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.7;
   ctx.lineCap = "round";
-  const mw = 4, mh = 7, mr = 2;
-  rrect(ctx, cx - mw / 2, cy - mh - 2, mw, mh, mr);
+  // mic capsule body
+  const mw = 4.5, mh = 8, mr = 2.5;
+  rrect(ctx, cx - mw / 2, cy - mh - 1, mw, mh, mr);
   ctx.fill();
+  // outer arc (stand)
   ctx.beginPath();
-  ctx.arc(cx, cy - 2, mw + 2, 0, Math.PI);
+  ctx.arc(cx, cy - 1, mw + 2.5, Math.PI, 0);
   ctx.stroke();
+  // vertical stem
   ctx.beginPath();
-  ctx.moveTo(cx, cy + mw);
-  ctx.lineTo(cx, cy + mw + 3);
-  ctx.moveTo(cx - 3, cy + mw + 3);
-  ctx.lineTo(cx + 3, cy + mw + 3);
+  ctx.moveTo(cx, cy + mw + 1.5);
+  ctx.lineTo(cx, cy + mw + 4);
+  ctx.stroke();
+  // base line
+  ctx.beginPath();
+  ctx.moveTo(cx - 3.5, cy + mw + 4);
+  ctx.lineTo(cx + 3.5, cy + mw + 4);
   ctx.stroke();
   ctx.restore();
 }
+
+// Android nav bar icons ───────────────────────────────────────────────────────
 
 function iconNavSquares(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
   ctx.save();
@@ -203,25 +242,6 @@ function iconNavSquares(ctx: CanvasRenderingContext2D, cx: number, cy: number, c
   [[-s - gap / 2, -s - gap / 2], [gap / 2, -s - gap / 2], [-s - gap / 2, gap / 2], [gap / 2, gap / 2]].forEach(([dx, dy]) => {
     ctx.strokeRect(cx + dx, cy + dy, s, s);
   });
-  ctx.restore();
-}
-
-function iconNavHome(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const s = 7;
-  ctx.beginPath();
-  ctx.moveTo(cx - s, cy + s * 0.3);
-  ctx.lineTo(cx, cy - s * 0.7);
-  ctx.lineTo(cx + s, cy + s * 0.3);
-  ctx.moveTo(cx - s * 0.6, cy + s * 0.3);
-  ctx.lineTo(cx - s * 0.6, cy + s);
-  ctx.lineTo(cx + s * 0.6, cy + s);
-  ctx.lineTo(cx + s * 0.6, cy + s * 0.3);
-  ctx.stroke();
   ctx.restore();
 }
 
