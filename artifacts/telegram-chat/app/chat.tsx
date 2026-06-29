@@ -53,7 +53,7 @@ function nowTime() {
 
 function PatternOverlay() {
   return (
-    <View style={[StyleSheet.absoluteFillObject, { opacity: 0.18 }]} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFillObject, { opacity: 0.28 }]} pointerEvents="none">
       <PatternSvg width="100%" height="100%" viewBox="0 0 1440 2960" preserveAspectRatio="xMidYMid slice" />
     </View>
   );
@@ -157,23 +157,31 @@ export default function ChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
-        <FlatList
-          ref={flatListRef}
-          data={listData}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            if ("_typing" in item) return <TypingBubble />;
-            return <MessageBubble message={item as Message} />;
-          }}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          keyboardDismissMode="interactive"
-          keyboardShouldPersistTaps="handled"
-          onScroll={handleScroll}
-          scrollEventThrottle={100}
-          onContentSizeChange={() => scrollToEnd(false)}
-          onLayout={() => scrollToEnd(false)}
-        />
+        <View style={styles.flex}>
+          <FlatList
+            ref={flatListRef}
+            data={listData}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              if ("_typing" in item) return <TypingBubble />;
+              return <MessageBubble message={item as Message} />;
+            }}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            onScroll={handleScroll}
+            scrollEventThrottle={100}
+            onContentSizeChange={() => scrollToEnd(false)}
+            onLayout={() => scrollToEnd(false)}
+          />
+
+          {/* Fade gradient at bottom so messages blend into input bar */}
+          <LinearGradient
+            colors={["transparent", "rgba(74,138,74,0.85)"]}
+            style={styles.bottomFade}
+          />
+        </View>
 
         {showScrollBtn && (
           <Pressable style={styles.scrollBtn} onPress={() => flatListRef.current?.scrollToEnd({ animated: true })}>
@@ -219,6 +227,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
+  },
+  bottomFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 56,
+    pointerEvents: "none",
   },
   typingBar: { paddingHorizontal: 14, paddingBottom: 2 },
   typingText: { fontSize: 12, color: "rgba(255,255,255,0.9)", fontFamily: "Inter_400Regular", fontStyle: "italic" },
