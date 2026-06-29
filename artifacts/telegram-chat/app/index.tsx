@@ -3,9 +3,8 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
-  Alert,
   Modal,
   Platform,
   Pressable,
@@ -17,9 +16,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import AutomationModal from "@/components/AutomationModal";
-import FilesModal from "@/components/FilesModal";
-import { useAutomation } from "@/context/AutomationContext";
 import { useProfile } from "@/context/ProfileContext";
 import PatternSvg from "../assets/images/pattern.svg";
 
@@ -36,20 +32,17 @@ type EditField = { key: "theirName" | "theirPhone" | "theirUsername" | "theirBio
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const ctx = useProfile();
-  const { projects } = useAutomation();
   const [editField, setEditField] = useState<EditField | null>(null);
   const [editValue, setEditValue] = useState("");
   const [activeTab, setActiveTab] = useState<"you" | "them">("you");
-  const [showAutomation, setShowAutomation] = useState(false);
-  const [showFiles, setShowFiles] = useState(false);
-  const avatarFileRef = useRef<HTMLInputElement | null>(null);
+  const avatarFileRef = Platform.OS === "web" ? React.useRef<HTMLInputElement | null>(null) : null;
 
   const allMsgs = ctx.messages;
   const filteredMsgs = allMsgs.filter((m) => activeTab === "you" ? m.sent : !m.sent).slice(-6);
 
   function handleTheirAvatarPress() {
     if (Platform.OS === "web") {
-      if (avatarFileRef.current) {
+      if (avatarFileRef?.current) {
         avatarFileRef.current.value = "";
         avatarFileRef.current.click();
       }
@@ -105,10 +98,9 @@ export default function ProfileScreen() {
       <LinearGradient colors={["#b2d4a8", "#6aab6a", "#4a8a4a"]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFillObject} />
       <PatternOverlay />
 
-      {/* Hidden file input for web avatar upload */}
       {Platform.OS === "web" && (
         <input
-          ref={avatarFileRef}
+          ref={avatarFileRef as any}
           type="file"
           accept="image/*"
           style={{ display: "none" }}
@@ -121,13 +113,10 @@ export default function ProfileScreen() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
         <Text style={styles.topBarTitle}>Profile</Text>
-        <Pressable style={styles.topBarBtn} onPress={() => router.push("/editor")}>
-          <Feather name="edit" size={19} color="#fff" />
-        </Pressable>
+        <View style={styles.topBarBtn} />
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
-        {/* Avatar */}
         <View style={styles.avatarSection}>
           <Pressable onPress={handleTheirAvatarPress} style={styles.avatarWrap}>
             <Image
@@ -147,13 +136,12 @@ export default function ProfileScreen() {
           <Text style={styles.profileStatus}>last seen recently</Text>
         </View>
 
-        {/* Actions */}
         <View style={styles.actionRow}>
           {[
             { icon: "chatbubble", label: "Message", action: () => router.push("/chat") },
-            { icon: "call", label: "Call", action: () => {} },
-            { icon: "videocam", label: "Video", action: () => {} },
-            { icon: "search", label: "Search", action: () => {} },
+            { icon: "call",       label: "Call",    action: () => {} },
+            { icon: "videocam",   label: "Video",   action: () => {} },
+            { icon: "search",     label: "Search",  action: () => {} },
           ].map((btn) => (
             <Pressable key={btn.label} style={styles.actionBtn} onPress={btn.action}>
               <View style={styles.actionIcon}>
@@ -164,7 +152,6 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Info card */}
         <View style={styles.card}>
           {infoRows.map((row, i) => (
             <Pressable key={row.key} style={[styles.infoRow, i > 0 && styles.rowBorder]} onPress={() => openEdit(row.key, row.sub, row.val)}>
@@ -178,7 +165,6 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* You / Them tabs */}
         <View style={styles.tabsCard}>
           <View style={styles.tabHeader}>
             <Pressable style={[styles.tabBtn, activeTab === "you" && styles.tabBtnActive]} onPress={() => setActiveTab("you")}>
@@ -212,46 +198,12 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Edit Chat button */}
-        <Pressable style={styles.editChatBtn} onPress={() => router.push("/editor")}>
-          <Feather name="edit-3" size={19} color="#fff" />
-          <Text style={styles.editChatText}>Edit Fake Chat</Text>
-        </Pressable>
-
         <Pressable style={styles.openChatBtn} onPress={() => router.push("/chat")}>
           <Ionicons name="chatbubbles" size={19} color="#fff" />
-          <Text style={styles.openChatText}>Open Chat</Text>
+          <Text style={styles.openChatText}>Open Chat & Download</Text>
         </Pressable>
-
-        {/* Automation + Files row */}
-        <View style={styles.autoRow}>
-          <Pressable style={styles.autoBtn} onPress={() => setShowAutomation(true)}>
-            <View style={styles.autoBtnIcon}>
-              <Ionicons name="flash" size={20} color="#fff" />
-            </View>
-            <Text style={styles.autoBtnText}>Automation</Text>
-            <Text style={styles.autoBtnSub}>Generate screenshots</Text>
-          </Pressable>
-
-          <Pressable style={styles.filesBtn} onPress={() => setShowFiles(true)}>
-            <View style={styles.filesBtnIcon}>
-              <Ionicons name="folder" size={20} color="#fff" />
-              {projects.length > 0 && (
-                <View style={styles.filesBadge}>
-                  <Text style={styles.filesBadgeText}>{projects.length}</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.filesBtnText}>Files</Text>
-            <Text style={styles.filesBtnSub}>{projects.length} project{projects.length !== 1 ? "s" : ""}</Text>
-          </Pressable>
-        </View>
       </ScrollView>
 
-      <AutomationModal visible={showAutomation} onClose={() => setShowAutomation(false)} />
-      <FilesModal visible={showFiles} onClose={() => setShowFiles(false)} />
-
-      {/* Edit Modal */}
       <Modal visible={!!editField} transparent animationType="fade" onRequestClose={() => setEditField(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setEditField(null)}>
           <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
@@ -275,7 +227,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingBottom: 8, justifyContent: "space-between" },
-  topBarBtn: { padding: 8, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.15)" },
+  topBarBtn: { padding: 8, borderRadius: 20, width: 38, height: 38, alignItems: "center", justifyContent: "center" },
   topBarTitle: { fontSize: 18, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 14, paddingTop: 10, gap: 12 },
@@ -317,23 +269,8 @@ const styles = StyleSheet.create({
   viewAllBtn: { paddingVertical: 13, alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#f0f0f0" },
   viewAllText: { fontSize: 14, color: "#3390ec", fontFamily: "Inter_600SemiBold" },
 
-  editChatBtn: { backgroundColor: "#6c5ce7", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, gap: 10, shadowColor: "#6c5ce7", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
-  editChatText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
   openChatBtn: { backgroundColor: "#3390ec", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, gap: 10, shadowColor: "#3390ec", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
   openChatText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
-
-  autoRow: { flexDirection: "row", gap: 12 },
-  autoBtn: { flex: 1, backgroundColor: "#f9a825", borderRadius: 16, paddingVertical: 16, paddingHorizontal: 14, alignItems: "center", gap: 6, shadowColor: "#f9a825", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
-  autoBtnIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
-  autoBtnText: { fontSize: 14, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
-  autoBtnSub: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "Inter_400Regular" },
-
-  filesBtn: { flex: 1, backgroundColor: "#6c5ce7", borderRadius: 16, paddingVertical: 16, paddingHorizontal: 14, alignItems: "center", gap: 6, shadowColor: "#6c5ce7", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
-  filesBtnIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
-  filesBtnText: { fontSize: 14, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
-  filesBtnSub: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontFamily: "Inter_400Regular" },
-  filesBadge: { position: "absolute", top: -4, right: -4, backgroundColor: "#ff4757", borderRadius: 9, minWidth: 18, height: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
-  filesBadgeText: { fontSize: 10, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", padding: 24 },
   modalBox: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 340 },

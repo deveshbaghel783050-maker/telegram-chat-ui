@@ -10,14 +10,14 @@ import {
   View,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-// @ts-ignore
-import html2canvas from "html2canvas";
 
 import ChatHeader from "@/components/ChatHeader";
 import ChatInput from "@/components/ChatInput";
 import MessageBubble from "@/components/MessageBubble";
 import { Message, useProfile } from "@/context/ProfileContext";
 import PatternSvg from "../assets/images/pattern.svg";
+import { generateChatScreenshot } from "@/utils/generateScreenshot";
+import { getRandomUser, getRandomConversation } from "@/utils/randomData";
 
 const AUTO_REPLIES: [string, string[]][] = [
   ["hi",      ["Hello bhai! 👋", "Haan bol kya scene", "Hi hi!"]],
@@ -51,14 +51,6 @@ function nowTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function PatternOverlay() {
-  return (
-    <View style={[StyleSheet.absoluteFillObject, { opacity: 0.28 }]} pointerEvents="none">
-      <PatternSvg width="100%" height="100%" viewBox="0 0 1440 2960" preserveAspectRatio="xMidYMid slice" />
-    </View>
-  );
-}
-
 function TypingBubble() {
   return (
     <View style={ts.row}>
@@ -83,30 +75,27 @@ const ts = StyleSheet.create({
 type ListItem = Message | { id: string; _typing: true };
 
 export default function ChatScreen() {
-  const { messages, addMessage, theirName } = useProfile();
+  const { messages, addMessage, theirName, myName } = useProfile();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [capturing, setCapturing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   async function handleDownload() {
     if (Platform.OS !== "web") return;
-    setCapturing(true);
-    await new Promise((r) => setTimeout(r, 150));
+    setDownloading(true);
     try {
-      const canvas = await html2canvas(document.body, {
-        useCORS: true,
-        scale: 2,
-        backgroundColor: null,
-      });
+      const user = getRandomUser();
+      const msgs = getRandomConversation(user);
+      const dataUrl = await generateChatScreenshot(user, msgs, myName);
       const link = document.createElement("a");
-      link.download = `chat-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = `telegram-${user.name.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
+      link.href = dataUrl;
       link.click();
-    } catch (e) {
+    } catch {
       // silent
     }
-    setCapturing(false);
+    setDownloading(false);
   }
 
   function scrollToEnd(animated = true) {
@@ -183,7 +172,6 @@ export default function ChatScreen() {
           onLayout={() => scrollToEnd(false)}
         />
 
-
         {showScrollBtn && (
           <Pressable style={styles.scrollBtn} onPress={() => flatListRef.current?.scrollToEnd({ animated: true })}>
             <Ionicons name="chevron-down" size={20} color="#555" />
@@ -199,10 +187,12 @@ export default function ChatScreen() {
         <ChatInput onSend={handleSend} />
       </KeyboardAvoidingView>
 
-      {/* Floating Download Button — hidden during capture */}
-      {Platform.OS === "web" && !capturing && (
-        <Pressable style={styles.downloadBtn} onPress={handleDownload}>
-          <Ionicons name="download-outline" size={22} color="#fff" />
+      {Platform.OS === "web" && (
+        <Pressable style={[styles.downloadBtn, downloading && { opacity: 0.6 }]} onPress={handleDownload} disabled={downloading}>
+          {downloading
+            ? <Ionicons name="hourglass-outline" size={22} color="#fff" />
+            : <Ionicons name="download-outline" size={22} color="#fff" />
+          }
         </Pressable>
       )}
     </View>
@@ -216,7 +206,7 @@ const styles = StyleSheet.create({
   scrollBtn: {
     position: "absolute",
     right: 16,
-    bottom: Platform.OS === "web" ? 90 : 90,
+    bottom: 90,
     width: 40,
     height: 40,
     borderRadius: 20,
