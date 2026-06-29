@@ -45,7 +45,7 @@ export default function AutomationModal({ visible, onClose }: Props) {
 
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
-      setProgressLabel(`Generating chat with ${user.name}...`);
+      setProgressLabel(`Generating ${i + 1}/${users.length}: ${user.name}...`);
       const messages = getRandomConversation(user);
 
       let dataUrl = "";
@@ -54,6 +54,15 @@ export default function AutomationModal({ visible, onClose }: Props) {
           dataUrl = await generateChatScreenshot(user, messages, "You");
         } catch {
           dataUrl = "";
+        }
+
+        // Auto-download each screenshot immediately after generation
+        if (dataUrl) {
+          const link = document.createElement("a");
+          link.download = `${name}-${String(i + 1).padStart(2, "0")}-${user.name.replace(/\s+/g, "_")}.png`;
+          link.href = dataUrl;
+          link.click();
+          await delay(200); // small gap between downloads so browser doesn't block
         }
       }
 

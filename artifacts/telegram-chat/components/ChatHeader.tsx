@@ -61,13 +61,17 @@ export default function ChatHeader() {
           </View>
         </Pressable>
 
-        {/* Right pill: phone + more */}
+        {/* Right pill: phone + reset + more */}
         <View style={styles.rightPill}>
           <Pressable style={styles.pillBtn}>
             <Feather name="phone" size={20} color="#1a1a1a" />
           </Pressable>
           <View style={styles.pillDivider} />
           <Pressable style={styles.pillBtn} onPress={handleClearChat}>
+            <Feather name="trash-2" size={18} color="#e53935" />
+          </Pressable>
+          <View style={styles.pillDivider} />
+          <Pressable style={styles.pillBtn}>
             <Feather name="more-vertical" size={20} color="#1a1a1a" />
           </Pressable>
         </View>
