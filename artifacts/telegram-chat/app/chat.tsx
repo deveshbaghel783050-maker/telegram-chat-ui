@@ -16,8 +16,7 @@ import ChatInput from "@/components/ChatInput";
 import MessageBubble from "@/components/MessageBubble";
 import { Message, useProfile } from "@/context/ProfileContext";
 import PatternSvg from "../assets/images/pattern.svg";
-import { generateChatScreenshot } from "@/utils/generateScreenshot";
-import { getRandomUser, getRandomConversation } from "@/utils/randomData";
+import { captureDomScreenshot } from "@/utils/generateScreenshot";
 
 const AUTO_REPLIES: [string, string[]][] = [
   ["hi",      ["Hello bhai! 👋", "Haan bol kya scene", "Hi hi!"]],
@@ -85,14 +84,11 @@ export default function ChatScreen() {
     if (Platform.OS !== "web") return;
     setDownloading(true);
     try {
-      // Use exactly what's on screen — current profile + current messages
-      const user = {
-        name: theirName,
-        username: theirUsername,
-        phone: theirPhone,
-        avatarColor: "#e17055",
-      };
-      const dataUrl = await generateChatScreenshot(user, messages, myName);
+      // Capture exactly what's visible on screen — no fake HTML rebuild
+      const rootEl    = document.getElementById("chat-root");
+      const patternEl = document.getElementById("chat-pattern");
+      if (!rootEl) return;
+      const dataUrl = await captureDomScreenshot(rootEl, patternEl);
       const link = document.createElement("a");
       link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
@@ -141,9 +137,9 @@ export default function ChatScreen() {
     : messages;
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} nativeID="chat-root">
       <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7ab870" }]} />
-      <View style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]} pointerEvents="none" nativeID="chat-pattern">
         <PatternSvg
           width="100%"
           height="100%"

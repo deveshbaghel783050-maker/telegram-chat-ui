@@ -297,7 +297,58 @@ function buildChatHtml(user: RandomUser, messages: Message[], patternPngUrl: str
   `;
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
+// ─── Capture actual visible screen DOM → PNG (9:16) ─────────────────────────
+// This captures whatever is rendered on screen right now — exact match guaranteed.
+// patternElement is hidden temporarily because html2canvas can't render SVG.
+export async function captureDomScreenshot(
+  rootElement: HTMLElement,
+  patternElement: HTMLElement | null,
+): Promise<string> {
+  const SCALE = 2;
+  const W = rootElement.offsetWidth;
+  const H = rootElement.offsetHeight;
+
+  // Hide SVG pattern — html2canvas silently fails on SVG
+  if (patternElement) patternElement.style.visibility = "hidden";
+
+  let chatCanvas: HTMLCanvasElement;
+  try {
+    chatCanvas = await html2canvas(rootElement, {
+      width:  W,
+      height: H,
+      scale:  SCALE,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#7ab870",
+      logging: false,
+    });
+  } finally {
+    if (patternElement) patternElement.style.visibility = "";
+  }
+
+  // Composite: green bg + pattern PNG (0.55 opacity) + chat UI
+  const patternCanvas = await renderPatternToCanvas(W * SCALE, H * SCALE);
+
+  const final = document.createElement("canvas");
+  final.width  = W * SCALE;
+  final.height = H * SCALE;
+  const ctx = final.getContext("2d")!;
+
+  ctx.fillStyle = "#7ab870";
+  ctx.fillRect(0, 0, final.width, final.height);
+
+  if (patternCanvas) {
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(patternCanvas, 0, 0, final.width, final.height);
+    ctx.globalAlpha = 1.0;
+  }
+
+  ctx.drawImage(chatCanvas, 0, 0);
+
+  return final.toDataURL("image/png");
+}
+
+// ─── Main export (used by automation / bulk screenshots) ──────────────────────
 export async function generateChatScreenshot(
   user: RandomUser,
   messages: Message[],
