@@ -50,14 +50,16 @@ function nowTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function TypingBubble() {
+function TypingBubble({ darkMode }: { darkMode: boolean }) {
+  const bubbleBg = darkMode ? "#1e2c3d" : "#fff";
+  const dotColor = darkMode ? "#7c92a3" : "#aaa";
   return (
     <View style={ts.row}>
-      <View style={ts.bubble}>
+      <View style={[ts.bubble, { backgroundColor: bubbleBg }]}>
         <View style={ts.dots}>
-          <View style={ts.dot} />
-          <View style={[ts.dot, { opacity: 0.55 }]} />
-          <View style={[ts.dot, { opacity: 0.25 }]} />
+          <View style={[ts.dot, { backgroundColor: dotColor }]} />
+          <View style={[ts.dot, { backgroundColor: dotColor, opacity: 0.55 }]} />
+          <View style={[ts.dot, { backgroundColor: dotColor, opacity: 0.25 }]} />
         </View>
       </View>
     </View>
@@ -66,34 +68,37 @@ function TypingBubble() {
 
 const ts = StyleSheet.create({
   row: { flexDirection: "row", paddingHorizontal: 10, marginVertical: 3 },
-  bubble: { backgroundColor: "#fff", borderRadius: 18, borderTopLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 11, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  bubble: { borderRadius: 18, borderTopLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 11, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
   dots: { flexDirection: "row", gap: 5, alignItems: "center" },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#aaa" },
+  dot: { width: 8, height: 8, borderRadius: 4 },
 });
 
 type ListItem = Message | { id: string; _typing: true };
 
 export default function ChatScreen() {
-  const { messages, addMessage, theirName, theirUsername, theirPhone, myName } = useProfile();
+  const { messages, addMessage, theirName, theirUsername, theirPhone, myName, darkMode, toggleDarkMode } = useProfile();
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  // Dark mode colors
+  const bgColor      = darkMode ? "#1c2733" : "#7ab870";
+  const patternFill  = darkMode ? "#ffffff" : "#559e4e";
+  const patternOp    = darkMode ? 0.12 : 0.55;
+  const typingColor  = darkMode ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.9)";
+
   async function handleDownload() {
     if (Platform.OS !== "web") return;
     setDownloading(true);
     try {
-      // Use generateChatScreenshot — same proven approach as automation.
-      // It builds the chat HTML off-screen, composites green bg + pattern PNG +
-      // chat UI in 3 steps. Pattern always shows correctly this way.
       const user = {
         name:        theirName,
         username:    theirUsername,
         phone:       theirPhone,
-        avatarColor: "#3390ec",   // default Telegram blue
+        avatarColor: "#3390ec",
       };
-      const dataUrl = await generateChatScreenshot(user, messages, myName);
+      const dataUrl = await generateChatScreenshot(user, messages, myName, darkMode);
       const link = document.createElement("a");
       link.download = `telegram-${theirName.split(" ")[0].toLowerCase()}-${Date.now()}.png`;
       link.href = dataUrl;
@@ -110,19 +115,10 @@ export default function ChatScreen() {
   }
 
   function handleSend(text: string, imageUri?: string) {
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      text,
-      time: nowTime(),
-      sent: true,
-      read: false,
-      imageUri,
-    };
+    const userMsg: Message = { id: Date.now().toString(), text, time: nowTime(), sent: true, read: false, imageUri };
     addMessage(userMsg);
     scrollToEnd();
-
     if (imageUri) return;
-
     setIsTyping(true);
     const delay = 900 + Math.random() * 1100;
     setTimeout(() => {
@@ -144,16 +140,29 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.root} nativeID="chat-root">
-      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#7ab870" }]} nativeID="chat-bg" />
-      <View style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]} pointerEvents="none" nativeID="chat-pattern">
+      {/* Background */}
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: bgColor }]} nativeID="chat-bg" />
+
+      {/* Pattern overlay */}
+      <View style={[StyleSheet.absoluteFillObject, { opacity: patternOp }]} pointerEvents="none" nativeID="chat-pattern">
         <PatternSvg
           width="100%"
           height="100%"
           viewBox="0 0 1440 2960"
           preserveAspectRatio="xMidYMid slice"
-          fill="#559e4e"
+          fill={patternFill}
         />
       </View>
+
+      {/* Dark/Light toggle — top right */}
+      <Pressable style={styles.darkToggle} onPress={toggleDarkMode}>
+        <Ionicons
+          name={darkMode ? "sunny" : "moon"}
+          size={20}
+          color={darkMode ? "#f0c040" : "#c0d0e0"}
+        />
+      </Pressable>
+
       <ChatHeader />
 
       <KeyboardAvoidingView
@@ -166,7 +175,7 @@ export default function ChatScreen() {
           data={listData}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => {
-            if ("_typing" in item) return <TypingBubble />;
+            if ("_typing" in item) return <TypingBubble darkMode={darkMode} />;
             return <MessageBubble message={item as Message} />;
           }}
           contentContainerStyle={styles.listContent}
@@ -187,15 +196,21 @@ export default function ChatScreen() {
 
         {isTyping && (
           <View style={styles.typingBar}>
-            <Text style={styles.typingText}>{theirName} is typing...</Text>
+            <Text style={[styles.typingText, { color: typingColor }]}>{theirName} is typing...</Text>
           </View>
         )}
 
         <ChatInput onSend={handleSend} />
       </KeyboardAvoidingView>
 
+      {/* Download button */}
       {Platform.OS === "web" && (
-        <Pressable nativeID="chat-download-btn" style={[styles.downloadBtn, downloading && { opacity: 0.6 }]} onPress={handleDownload} disabled={downloading}>
+        <Pressable
+          nativeID="chat-download-btn"
+          style={[styles.downloadBtn, downloading && { opacity: 0.6 }]}
+          onPress={handleDownload}
+          disabled={downloading}
+        >
           {downloading
             ? <Ionicons name="hourglass-outline" size={22} color="#fff" />
             : <Ionicons name="download-outline" size={22} color="#fff" />
@@ -210,6 +225,20 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
   listContent: { paddingVertical: 10, paddingBottom: 4, flexGrow: 1, justifyContent: "flex-end" },
+
+  darkToggle: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 100,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0,0,0,0.30)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   scrollBtn: {
     position: "absolute",
     right: 16,
@@ -227,7 +256,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   typingBar: { paddingHorizontal: 14, paddingBottom: 2 },
-  typingText: { fontSize: 12, color: "rgba(255,255,255,0.9)", fontFamily: "Inter_400Regular", fontStyle: "italic" },
+  typingText: { fontSize: 12, fontFamily: "Inter_400Regular", fontStyle: "italic" },
   downloadBtn: {
     position: "absolute",
     left: 16,

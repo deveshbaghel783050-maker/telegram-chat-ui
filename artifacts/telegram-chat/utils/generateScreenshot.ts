@@ -92,19 +92,30 @@ function buildStatusBar(phone: string): string {
 }
 
 // ─── Header HTML ──────────────────────────────────────────────────────────────
-function buildHeader(user: RandomUser): string {
+function buildHeader(user: RandomUser, dark: boolean): string {
   const initial = user.name.charAt(0).toUpperCase();
   const lastSeen = seedLastSeen(user.phone);
+  const pillBg   = dark ? "#242f3d" : "#ffffff";
+  const shadow   = dark ? "none" : "0 1px 4px rgba(0,0,0,0.13)";
+  const nameCol  = dark ? "#ffffff" : "#0a0a0a";
+  const subCol   = dark ? "#7c92a3" : "#777";
+  const iconStroke = dark ? "#b0bec5" : "#1a1a1a";
+  const iconFill   = dark ? "#b0bec5" : "#1a1a1a";
+  const divCol   = dark ? "#3a4f60" : "#e0e0e0";
+  // Rebuild SVG icons with correct color for current mode
+  const arrowSvg = `<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.5 5L7.5 11L13.5 17" stroke="${iconStroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="7.5" y1="11" x2="18.5" y2="11" stroke="${iconStroke}" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+  const phoneSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${iconStroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.43 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.69a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  const dotsSvg  = `<svg width="20" height="20" viewBox="0 0 24 24" fill="${iconFill}" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>`;
   return `
     <div style="position:absolute;top:${STATUS_H}px;left:0;right:0;height:${HEADER_H}px;display:flex;align-items:center;padding:0 10px;gap:8px;box-sizing:border-box;">
 
       <!-- Back circle -->
-      <div style="width:48px;height:48px;border-radius:24px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.13);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        ${SVG_ARROW_BACK}
+      <div style="width:48px;height:48px;border-radius:24px;background:${pillBg};box-shadow:${shadow};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        ${arrowSvg}
       </div>
 
       <!-- Center pill -->
-      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding:8px 14px 8px 8px;gap:10px;min-height:52px;box-shadow:0 1px 4px rgba(0,0,0,0.13);box-sizing:border-box;overflow:hidden;">
+      <div style="flex:1;display:flex;align-items:center;background:${pillBg};border-radius:999px;padding:8px 14px 8px 8px;gap:10px;min-height:52px;box-shadow:${shadow};box-sizing:border-box;overflow:hidden;">
         <!-- Avatar -->
         <div style="width:36px;height:36px;border-radius:18px;background:${user.avatarColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <span style="color:#fff;font-size:16px;font-weight:700;font-family:'Inter_700Bold','Inter',sans-serif;">${initial}</span>
@@ -112,38 +123,44 @@ function buildHeader(user: RandomUser): string {
         <!-- Name + status -->
         <div style="flex:1;overflow:hidden;">
           <div style="display:flex;align-items:center;">
-            <span style="font-size:15px;font-weight:700;color:#0a0a0a;font-family:'Inter_700Bold','Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</span>
+            <span style="font-size:15px;font-weight:700;color:${nameCol};font-family:'Inter_700Bold','Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</span>
           </div>
-          <div style="font-size:12px;color:#777;font-family:'Inter_400Regular','Inter',sans-serif;margin-top:1px;">${lastSeen}</div>
+          <div style="font-size:12px;color:${subCol};font-family:'Inter_400Regular','Inter',sans-serif;margin-top:1px;">${lastSeen}</div>
         </div>
       </div>
 
       <!-- Right pill -->
-      <div style="display:flex;align-items:center;background:#fff;border-radius:999px;padding:10px 6px;box-shadow:0 1px 4px rgba(0,0,0,0.13);">
-        <div style="padding:2px 8px;display:flex;align-items:center;">${SVG_PHONE}</div>
-        <div style="width:1px;height:18px;background:#e0e0e0;margin:0 2px;"></div>
-        <div style="padding:2px 8px;display:flex;align-items:center;">${SVG_THREE_DOTS}</div>
+      <div style="display:flex;align-items:center;background:${pillBg};border-radius:999px;padding:10px 6px;box-shadow:${shadow};">
+        <div style="padding:2px 8px;display:flex;align-items:center;">${phoneSvg}</div>
+        <div style="width:1px;height:18px;background:${divCol};margin:0 2px;"></div>
+        <div style="padding:2px 8px;display:flex;align-items:center;">${dotsSvg}</div>
       </div>
 
     </div>`;
 }
 
 // ─── Message bubble HTML ──────────────────────────────────────────────────────
-function buildBubble(msg: Message): string {
-  const sentBg   = "#dcf8c6";
-  const recvBg   = "#ffffff";
+function buildBubble(msg: Message, dark: boolean): string {
+  const sentBg   = dark ? "#2b5278" : "#dcf8c6";
+  const recvBg   = dark ? "#1e2c3d" : "#ffffff";
   const bg       = msg.sent ? sentBg : recvBg;
-  const timeCol  = msg.sent ? "#6a9a6a" : "#999";
+  const textCol  = dark ? "#ffffff" : "#0a0a0a";
+  const timeCol  = msg.sent
+    ? (dark ? "#6d9dc8" : "#6a9a6a")
+    : (dark ? "#7c92a3" : "#999");
+  const tickCol  = msg.read
+    ? (dark ? "#6d9dc8" : "#3390ec")
+    : (dark ? "#4a6a88" : "#8ab88a");
   const br       = msg.sent
     ? "border-radius:18px;border-bottom-right-radius:4px;"
     : "border-radius:18px;border-bottom-left-radius:4px;";
   const align    = msg.sent ? "flex-end" : "flex-start";
   const tick     = msg.sent
-    ? (msg.read ? SVG_CHECK_DONE_READ : SVG_CHECK_DONE_UNREAD)
+    ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12l5 5L18 5" stroke="${tickCol}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 12l5 5L23 5" stroke="${tickCol}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
     : "";
 
   const textHtml = msg.text
-    ? `<div style="font-size:15px;line-height:20px;color:#0a0a0a;font-family:'Inter_400Regular','Inter',sans-serif;word-break:break-word;">${escHtml(msg.text)}</div>`
+    ? `<div style="font-size:15px;line-height:20px;color:${textCol};font-family:'Inter_400Regular','Inter',sans-serif;word-break:break-word;">${escHtml(msg.text)}</div>`
     : "";
 
   return `
@@ -159,22 +176,18 @@ function buildBubble(msg: Message): string {
 }
 
 // ─── Input bar HTML ───────────────────────────────────────────────────────────
-function buildInputBar(): string {
+function buildInputBar(dark: boolean): string {
+  const pillBg    = dark ? "#242f3d" : "#ffffff";
+  const iconCol   = dark ? "#7c92a3" : "#8a8a8a";
+  const phCol     = dark ? "#546879" : "#b0b0b0";
+  const smileySvg = `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="11" stroke="${iconCol}" stroke-width="1.7"/><circle cx="9.5" cy="10.5" r="1.4" fill="${iconCol}"/><circle cx="16.5" cy="10.5" r="1.4" fill="${iconCol}"/><path d="M8.5 15.5 Q13 19.5 17.5 15.5" stroke="${iconCol}" stroke-width="1.7" stroke-linecap="round" fill="none"/></svg>`;
+  const clipSvg   = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${iconCol}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
   return `
     <div style="position:absolute;bottom:${NAV_H}px;left:0;right:0;height:${INPUT_H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;">
-      <!-- Single pill — emoji | text | paperclip | mic circle — all inside (matches ChatInput.tsx) -->
-      <div style="flex:1;display:flex;align-items:center;background:#fff;border-radius:999px;padding-left:6px;padding-right:4px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-        <!-- Emoji button -->
-        <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          ${SVG_SMILEY}
-        </div>
-        <!-- Placeholder text -->
-        <div style="flex:1;font-size:16px;color:#b0b0b0;font-family:'Inter_400Regular','Inter',sans-serif;">Message</div>
-        <!-- Paperclip -->
-        <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          ${SVG_PAPERCLIP}
-        </div>
-        <!-- Blue mic circle — INSIDE pill (matching screen layout in ChatInput.tsx) -->
+      <div style="flex:1;display:flex;align-items:center;background:${pillBg};border-radius:999px;padding-left:6px;padding-right:4px;min-height:50px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+        <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${smileySvg}</div>
+        <div style="flex:1;font-size:16px;color:${phCol};font-family:'Inter_400Regular','Inter',sans-serif;">Message</div>
+        <div style="padding:4px 8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${clipSvg}</div>
         <div style="width:42px;height:42px;border-radius:21px;background:#3390ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(51,144,236,0.35);">
           ${SVG_MIC}
         </div>
@@ -261,28 +274,30 @@ async function renderPatternToCanvas(targetW: number, targetH: number): Promise<
 }
 
 // ─── Main builder ─────────────────────────────────────────────────────────────
-function buildChatHtml(user: RandomUser, messages: Message[], patternPngUrl: string | null): string {
+function buildChatHtml(user: RandomUser, messages: Message[], patternPngUrl: string | null, dark: boolean): string {
   const msgAreaTop    = HEADER_H;
   const msgAreaBottom = INPUT_H + NAV_H;
 
   const filled      = padMessages(messages, 14);
-  const bubblesHtml = filled.map(buildBubble).join("");
+  const bubblesHtml = filled.map((m) => buildBubble(m, dark)).join("");
 
-  // patternPngUrl is a real PNG data URL — html2canvas renders this perfectly
+  const bgColor = dark ? "#1c2733" : "#7ab870";
+  // Dark mode: invert pattern so doodles appear as light outlines on dark bg
+  const patternStyle = dark
+    ? "position:absolute;inset:0;width:100%;height:100%;opacity:0.15;object-fit:cover;pointer-events:none;filter:invert(1);"
+    : "position:absolute;inset:0;width:100%;height:100%;opacity:1;object-fit:cover;pointer-events:none;";
   const patternHtml = patternPngUrl
-    ? `<img src="${patternPngUrl}"
-           style="position:absolute;inset:0;width:100%;height:100%;opacity:1;object-fit:cover;pointer-events:none;" />`
+    ? `<img src="${patternPngUrl}" style="${patternStyle}" />`
     : "";
 
   return `
-    <!-- Solid green background matching chat.tsx (#7ab870) -->
-    <div style="position:absolute;inset:0;background:#7ab870;"></div>
+    <div style="position:absolute;inset:0;background:${bgColor};"></div>
 
     <!-- Pattern overlay — real PNG rendered from SVG, html2canvas handles PNG perfectly -->
     ${patternHtml}
 
     <!-- Header -->
-    ${buildHeader(user)}
+    ${buildHeader(user, dark)}
 
     <!-- Messages area — flex-end so messages anchor at bottom, overflow hidden at top -->
     <div style="position:absolute;top:${msgAreaTop}px;left:0;right:0;bottom:${msgAreaBottom}px;
@@ -292,7 +307,7 @@ function buildChatHtml(user: RandomUser, messages: Message[], patternPngUrl: str
     </div>
 
     <!-- Input bar -->
-    ${buildInputBar()}
+    ${buildInputBar(dark)}
 
     <!-- Nav bar -->
     ${buildNavBar()}
@@ -368,6 +383,7 @@ export async function generateChatScreenshot(
   user: RandomUser,
   messages: Message[],
   _myName: string,
+  darkMode = false,
 ): Promise<string> {
   const SCALE = 2;
 
@@ -387,7 +403,7 @@ export async function generateChatScreenshot(
   // Pass PATTERN_DATA_URL directly so html2canvas renders green bg + pattern + chat in one shot.
   // Previously pattern was composited separately AFTER html2canvas, but the solid green
   // chat canvas was drawn on top and covered the pattern completely.
-  container.innerHTML = buildChatHtml(user, messages, PATTERN_DATA_URL);
+  container.innerHTML = buildChatHtml(user, messages, PATTERN_DATA_URL, darkMode);
   document.body.appendChild(container);
 
   await document.fonts.ready;

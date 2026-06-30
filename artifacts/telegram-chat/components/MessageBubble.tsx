@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Message } from "@/context/ProfileContext";
+import { Message, useProfile } from "@/context/ProfileContext";
 
 type Props = {
   message: Message;
@@ -11,24 +11,40 @@ type Props = {
 
 export default function MessageBubble({ message }: Props) {
   const { text, time, sent, edited, read, imageUri } = message;
+  const { darkMode } = useProfile();
+
+  const bubbleBg   = sent
+    ? (darkMode ? "#2b5278" : "#dcf8c6")
+    : (darkMode ? "#1e2c3d" : "#ffffff");
+  const textColor  = darkMode ? "#ffffff" : "#0a0a0a";
+  const timeColor  = sent
+    ? (darkMode ? "#6d9dc8" : "#6a9a6a")
+    : (darkMode ? "#7c92a3" : "#999");
+  const tickColor  = read
+    ? (darkMode ? "#6d9dc8" : "#3390ec")
+    : (darkMode ? "#4a6a88" : "#8ab88a");
 
   return (
     <View style={[styles.row, sent ? styles.rowSent : styles.rowReceived]}>
-      <View style={[styles.bubble, sent ? styles.bubbleSent : styles.bubbleReceived]}>
+      <View style={[
+        styles.bubble,
+        sent ? styles.bubbleSent : styles.bubbleReceived,
+        { backgroundColor: bubbleBg },
+      ]}>
 
         {imageUri ? (
           <View style={styles.imageWrap}>
             <Image source={{ uri: imageUri }} style={styles.msgImage} contentFit="cover" />
             {text ? (
-              <Text style={[styles.text, styles.captionPad, sent ? styles.textSent : styles.textReceived]}>
+              <Text style={[styles.text, styles.captionPad, { color: textColor }]}>
                 {text}
               </Text>
             ) : null}
           </View>
         ) : (
-          <Text style={[styles.text, sent ? styles.textSent : styles.textReceived]} selectable>
+          <Text style={[styles.text, { color: textColor }]} selectable>
             {edited && (
-              <Text style={[styles.editedTag, sent ? styles.metaSent : styles.metaReceived]}>
+              <Text style={[styles.editedTag, { color: timeColor }]}>
                 edited{" "}
               </Text>
             )}
@@ -36,13 +52,13 @@ export default function MessageBubble({ message }: Props) {
           </Text>
         )}
 
-        <View style={[styles.meta, sent ? styles.metaRight : styles.metaRight]}>
-          <Text style={[styles.time, sent ? styles.metaSent : styles.metaReceived]}>{time}</Text>
+        <View style={[styles.meta, styles.metaRight]}>
+          <Text style={[styles.time, { color: timeColor }]}>{time}</Text>
           {sent && (
             <Ionicons
               name="checkmark-done"
               size={13}
-              color={read ? "#3390ec" : "#8ab88a"}
+              color={tickColor}
               style={{ marginLeft: 2 }}
             />
           )}
@@ -74,23 +90,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  bubbleReceived: {
-    backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 4,
-  },
-  bubbleSent: {
-    backgroundColor: "#dcf8c6",
-    borderBottomRightRadius: 4,
-  },
+  bubbleReceived: { borderBottomLeftRadius: 4 },
+  bubbleSent:     { borderBottomRightRadius: 4 },
 
   text: {
     fontSize: 15,
     lineHeight: 20,
     fontFamily: "Inter_400Regular",
-    color: "#0a0a0a",
   },
-  textSent: { color: "#0a0a0a" },
-  textReceived: { color: "#0a0a0a" },
   captionPad: { marginTop: 5 },
 
   meta: {
@@ -104,8 +111,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_400Regular",
   },
-  metaSent: { color: "#6a9a6a" },
-  metaReceived: { color: "#999" },
 
   editedTag: {
     fontSize: 11,

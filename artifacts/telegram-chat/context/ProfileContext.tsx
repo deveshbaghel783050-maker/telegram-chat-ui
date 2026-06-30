@@ -48,6 +48,9 @@ type AppContextType = {
   flipSender: (id: string) => void;
   setMessages: (msgs: Message[]) => void;
   clearMessages: () => void;
+
+  darkMode: boolean;
+  toggleDarkMode: () => void;
 };
 
 const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -63,6 +66,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [theirAvatarUri, setTheirAvatarUri] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<Message[]>(FAKE_CHAT);
+  const [darkMode, setDarkMode] = useState(false);
 
   function updateTheirProfile(u: Partial<{ name: string; phone: string; username: string; bio: string; avatarUri: string | null }>) {
     if (u.name !== undefined) setTheirName(u.name);
@@ -92,11 +96,16 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setMessages([]);
   }
 
+  function toggleDarkMode() {
+    setDarkMode((v) => !v);
+  }
+
   return (
     <AppContext.Provider value={{
       myName, myAvatarUri, setMyName, setMyAvatarUri,
       theirName, theirPhone, theirUsername, theirBio, theirAvatarUri, updateTheirProfile,
       messages, addMessage, editMessage, deleteMessage, flipSender, setMessages, clearMessages,
+      darkMode, toggleDarkMode,
     }}>
       {children}
     </AppContext.Provider>
