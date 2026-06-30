@@ -85,7 +85,7 @@ export default function ChatScreen() {
   // Dark mode colors
   const bgColor      = darkMode ? "#1c2733" : "#7ab870";
   const patternFill  = darkMode ? "#ffffff" : "#559e4e";
-  const patternOp    = darkMode ? 0.12 : 0.55;
+  const patternOp    = darkMode ? 0.40 : 0.55;
   const typingColor  = darkMode ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.9)";
 
   async function handleDownload() {
