@@ -202,6 +202,11 @@ export default function ProfileScreen() {
           <Ionicons name="chatbubbles" size={19} color="#fff" />
           <Text style={styles.openChatText}>Open Chat & Download</Text>
         </Pressable>
+
+        <Pressable style={styles.automationBtn} onPress={() => router.push("/automation")}>
+          <Ionicons name="flash" size={19} color="#fff" />
+          <Text style={styles.automationBtnText}>Batch Automation</Text>
+        </Pressable>
       </ScrollView>
 
       <Modal visible={!!editField} transparent animationType="fade" onRequestClose={() => setEditField(null)}>
@@ -271,6 +276,8 @@ const styles = StyleSheet.create({
 
   openChatBtn: { backgroundColor: "#3390ec", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, gap: 10, shadowColor: "#3390ec", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
   openChatText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
+  automationBtn: { backgroundColor: "#8e44ad", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, gap: 10, shadowColor: "#8e44ad", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 },
+  automationBtnText: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", padding: 24 },
   modalBox: { backgroundColor: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 340 },
